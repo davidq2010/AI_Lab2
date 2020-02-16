@@ -4,7 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-public class Chess {
+public class ChessAI {
 
     public static ArrayList<ArrayList<String>> GetBoard(String fileName)
         throws IOException {
