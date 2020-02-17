@@ -1,16 +1,18 @@
 import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
+import java.lang.Math;
 
 public class BoardStateManager
 {	// HashMap storing value of pieces
 	private HashMap<String, Float> pieceVal;
 	// HashMap for a1 - h8 coords to numerical coordinates
-	private HashMap<String, Integer[]> strToCoord;
+	//private HashMap<String, Integer[]> strToCoord;
 
 	// HashMap for numerical to a1-h8 coords
-	private HashMap<Integer[], String> coordToStr;
+	//private HashMap<Integer[], String> coordToStr;
 	// HashMap for Storing valid moves of current team
-	private HashMap<String, String[]> validMoves;
+	private HashMap<String, ArrayList<Integer[]>> validMoves;
 
 	// Hashmap to store current chess piece positions 
 	private HashMap<String, String[]> currPos;
@@ -63,13 +65,14 @@ public class BoardStateManager
     }
 
 
-    public HashMap<String, String[]> computeValidMoves(String currTeam)
+    public HashMap<String, ArrayList<Integer[]>> computeValidMoves(ArrayList<ArrayList<String>> board, String currTeam)
 	{
+		Hashmap<String, ArrayList<Integer[]>> viableMoves = new Hashmap<>();
 		piece =  new Piece(); // need to import piece class
 		Integer currKing[] = new Integer[2];
 
-		// array to temporarily hold king moves before placing in hashmap 
-		String kingMovesTemp[];
+		// List to temporarily hold king moves before placing in hashmap 
+		ArrayList<Integer[]> kingMovesTemp;
 		// Array holding type and str position of piece putting king in check
 		String checkOne[] = new String[2];
 		String checkTwo[] = new Sting[2];
@@ -91,37 +94,57 @@ public class BoardStateManager
     	// check if any sliding piece has it in check
     	ArrayList<String[]> checkPieces = checkChecker(currKing[0], currKing[1]);
     	checkOne = checkPieces.get(0);
-    	checkTwo = checkPieces.get(1);
+    	checkTwo = checkPieces.get(1); // might not need this 
 		// check how many checks the king is in
 		// if none, generate viable moves 
-    	if(checkOne[0] == "none")
-    	{	
-    		Integer dir[]; // gets dir from AL
-    		int newX;	// x coord of possible move
-    		int newY;	// y coord of possible move
-    		Integer newMove[]; // holds viable move 
-    		for(int i = 0; i < piece.qkDir.size(); i++)
+    		
+    	Integer dir[] = new Integer[2]; // gets dir from AL
+    	int newX;	// x coord of possible move
+    	int newY;	// y coord of possible move
+    	Integer newMove[]; // holds viable move 
+    	for(int i = 0; i < piece.qkDir.size(); i++)
+    	{
+    		dir = piece.qkDir.get(i);
+    		newX = currKing[0] + dir[0];
+    		newY = currKing[1] + dir[1];
+    		if(isControlled(board, newX, newY) == false) // if coord not controlled, add move as viable move for king
     		{
-    			dir = qkDir(i);
-    			newX = currKing[0] + dir[0];
-    			newY = currKing[1] + dir[1];
-    			if(isControlled(newX, newY) == false) // if coord not controlled, add move as viable move for king
-    			{
-    				newMove[0] = newX;
-    				newMove[1] = newY;
-    				kingMovesTemp[i] = coordToStr.get(newMove);
+    			newMove[0] = newX;
+    			newMove[1] = newY;
+    			kingMovesTemp.add(newMove);
 
-    			} 
+    		} 
 
+    	}
+
+
+        if(checkPieces.size() == 1 && checkOne != "none")// 1 check on king 
+    	{
+    		if(checkOne[0] == "N")
+    		{ 
+    			//HANDLE FOR KNIGHT
+    		}
+    		else if(checkOne[0] == "Q")
+    		{
+    			// HANDLE FOR QUEEN
+    		}
+    		else if(checkOne[0] == "R")
+    		{
+    			// HANDLE FOR ROOK
+    		}
+    		else if(checkOne[0] == "B")
+    		{
+    			// HANDLE FOR BISHOP
+    		}
+    		else if(checkOne[0] == "P")
+    		{
+    			// HANDLE FOR PAWN 
     		}
 
-
-    	}else if(checkPieces.size() == 1)// 1 check on king 
+    	}else if(checkPieces.size() == 2)  // 2 checks on king so only valid moved are viable king moves
     	{
-
-    	}else
-    	{
-
+    		viableMoves.put("K", kingMovesTemp);
+    		return viableMoves;
     	}
 
 
@@ -138,13 +161,73 @@ public class BoardStateManager
 
     	// Check Knights
 
+
+    	return checkPieces;
     }
 
     // Helper Method determins if square is controlled by something 
-    public boolean isControlled(int x, int y)
+    public boolean isControlled(ArrayList<ArrayList<String>> board, int x, int y, String adversaryTeam)
     {
     	//TO-DO00
+    	//boolean  controlled = false;
+    	if(board.get(x).get(y) != "_")
+    	{
+    		return true;
+    	}
+    	
+    	// Sliding pieces
+    	Integer dir[] = new Integer[2];
+    	int offsetX;
+    	int offsetY;
+    	int tempX;
+    	int tempY;
+    	String grid;
+    	for(int i = 0; i < board.size() - x; i++)
+    	{
+    		for(k = 0; k < board.get(0).size - y; k++)
+    		{
+	    		for(int j = 0; j < piece.qkDir.size(); j++)
+	    		{
+	    			dir = piece.qkDir.get(j);
+	    			offsetX = dir[0] * (i+1);
+	    			offsetY = dir[1] * (j+1);
+	    			tempX = x + offsetX;
+	    			tempY = y + offsetY;
+	    			grid = board.get(tempX).get(tempY);
+
+	    			if(grid != "_")
+	    			{
+	    				if((grid == "P" && adversaryTeam == "white") || (grid == "p" && adversaryTeam = "black"))
+	    				{
+	    					if(Math.abs(offsetY) - Math.abs(offsetX) == 0)
+	    					{
+	    						return true;
+	    					}
+	    				}
+
+	    				if((grid == "N" && adversaryTeam == "white") || (grid == "n" && adversaryTeam = "black"))
+	    				{
+	    					if(Math.abs(offsetY) - Math.abs(offsetX) != 0)
+	    					{
+	    						return true;
+	    					}
+	    				}
+
+	    				if((grid == "Q" && adversaryTeam == "white") || (grid == "q" && adversaryTeam = "black"))
+	    				{
+	    						return true;
+	    					
+	    				}
+
+
+	    			}
+	    		}
+	    	}
+    		
+    	}
     }
+
+/* No more mapping 
 
     public HashMap<String,Integer[]> computeStrToNumCoord()
     {
@@ -218,4 +301,5 @@ public class BoardStateManager
 		return mapping;
 		
     }
+    */
 }
