@@ -143,7 +143,7 @@ public class BoardStateManager
     // Helper Method determins if square is controlled by something 
     public boolean isControlled(int x, int y)
     {
-    	//TO-DO
+    	//TO-DO00
     }
 
     public HashMap<String,Integer[]> computeStrToNumCoord()

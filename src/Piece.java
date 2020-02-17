@@ -45,7 +45,7 @@ public class Piece {
 	}
 
     
-    // Helper method to determine squares that are controlled by specifed piece 
+    // Helper method to determine squares that are controlled by specifed piece 00
     public ArrayList<Integer[]> controlSquares(ArrayList<ArrayList<String>> board, int x, int y, String type)
     {
 
