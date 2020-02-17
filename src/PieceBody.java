@@ -1,4 +1,4 @@
-public class Piece implements Piece {
+public class PieceBody implements Piece {
 	public Rook() {
 
 	}
