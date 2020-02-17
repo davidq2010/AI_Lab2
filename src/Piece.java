@@ -1,11 +1,12 @@
 
 public class Piece {
-    // Parent class of all the pieces, which will implement a move() method.
-    // Ideas for private members:
-    //  Movable squares
-    //
+	private ArrayList<Integer[]> knightDir;
+	private ArrayList<Integer[]> qkDir;
+	private ArrayList<Integer[]> bishopDir;
+	private ArrayList<Integer[]> rookDir;
+	private ArrayList<Integer[]> pawnDir;
+	public Piece()
+    
+    public ArrayList<Integer[]> controlSquares(ArrayList<ArrayList<String>> board, int x, int y);
 
-    public Piece() {
-
-    }
 }

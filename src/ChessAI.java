@@ -1,4 +1,4 @@
-import java.util.ArrayList;
+    import java.util.ArrayList;
 import java.util.Arrays;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -23,15 +23,6 @@ public class ChessAI {
 
                 return board;
             }
-    }
-
-    public static void PrintBoard(ArrayList<ArrayList<String>> board) {
-        for (int i = 0; i < board.size(); i++) {
-            for (int j = 0; j < board.get(0).size(); j++) {
-                System.out.print(board.get(i).get(j) + " ");
-            }
-            System.out.println();
-        }
     }
 
     public static void main(String[] args) {
