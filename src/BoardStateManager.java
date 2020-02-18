@@ -8,49 +8,49 @@ public class BoardStateManager
 {	// HashMap storing value of pieces
 	private HashMap<Character, Float> pieceVal;
 	// HashMap for a1 - h8 coords to numerical coordinates
-	//private HashMap<String, Integer[]> strToCoord;
+	//private HashMap<String, int[]> strToCoord;
 
-	private HashMap<String, ArrayList<Integer[]>> unitDirections;
+	private HashMap<String, ArrayList<int[]>> unitDirections;
 
 	// HashMap for numerical to a1-h8 coords
-	//private HashMap<Integer[], String> coordToStr;
+	//private HashMap<int[], String> coordToStr;
 	// HashMap for Storing valid moves of current team
-	private HashMap<Character, ArrayList<Integer[]>> validMoves;
+	private HashMap<Character, ArrayList<int[]>> validMoves;
 
 	// Hashmap to store current chess piece positions 
-	private HashMap<Character, Integer[]> currPos;
+	private HashMap<String, int[]> allPiecePos;
 
 	private Integer blackKing[];
 	private Integer whiteKing[];
 
 	public BoardStateManager() 
 	{
-		this.pieceVal = new HashMap<>() {{
-			put('q', 9.0),
-			put('r', 5.0),
-			put('b', 3.0),
-			put('n', 3.0),
-			put('p', 1.0),
-			put('_', 0.0)
+		this.pieceVal = new HashMap<Character, Float>() {{
+			put('q', 9.f);
+			put('r', 5.f);
+			put('b', 3.f);
+			put('n', 3.f);
+			put('p', 1.f);
+			put('_', 0.f);
 		}};
 
 		unitDirections = new HashMap<>();
 
-		ArrayList<Integer[]> diagonal = new ArrayList<>();
+		ArrayList<int[]> diagonal = new ArrayList<>();
 		diagonal.add(new int[]{1, 1});
 		diagonal.add(new int[]{-1, -1});
 		diagonal.add(new int[]{1, -1});
 		diagonal.add(new int[]{-1, 1});
 		unitDirections.put("diagonal", diagonal);
 
-		ArrayList<Integer[]> grid = new ArrayList<>();
+		ArrayList<int[]> grid = new ArrayList<>();
 		grid.add(new int[]{1, 0});
 		grid.add(new int[]{-1, 0});
 		grid.add(new int[]{0, 1});
 		grid.add(new int[]{0, -1});
 		unitDirections.put("grid", grid);
 
-		ArrayList<Integer[]> knight = new ArrayList<>();
+		ArrayList<int[]> knight = new ArrayList<>();
 		knight.add(new int[]{2, 1});
 		knight.add(new int[]{2, -1});
 		knight.add(new int[]{1, 2});
@@ -62,8 +62,7 @@ public class BoardStateManager
 		unitDirections.put("knight", knight);
 
 
-		this.strToCoord = computeStrToNumCoord();
-
+		//this.strToCoord = computeStrToNumCoord();
 	}
 
 	public float computeScore(ArrayList<ArrayList<String>> board) 
@@ -82,13 +81,61 @@ public class BoardStateManager
 	}
 
     public void printBoard(char[][] board) {
-        for (int i = 0; i < BOARD_SIZE; i++) {
-            for (int j = 0; j < BOARD_SIZE; j++) {
+        for (int i = 0; i < ChessAI.BOARD_SIZE; i++) {
+            for (int j = 0; j < ChessAI.BOARD_SIZE; j++) {
                 System.out.print(board[i][j] + " ");
             }
             System.out.println();
         }
     }
+
+	/*
+    // If a piece is eaten during a move, how do we account for it? if we had a board of strings it would be easier!!
+    // in the hashmap of pieces to coords we need support for multiple Pawns, Knights, etc...can't support this w char!
+    public ArrayList<Character[][]> computeKnightStates(char[][] board, String currColor) {
+    	int[] knight1;
+    	int[] knight2; 
+    	ArrayList<Character[][]> knightStates = new ArrayList<>();
+    	char[][] succState1 = board;
+    	char[][] succState2 = board;
+    	char updatingPiece;
+
+    	if(currColor.equals("white")) {
+    		knight1 = allPiecePos.get("K1");
+    		knight2 = allPiecePos.get("K2");
+    		updatingPiece = 'K';
+    	}
+    	else{
+    		knight1 = allPiecePos.get("k1");
+    		knight2 = allPiecePos.get("k2");
+    		updatingPiece = 'k';
+    	}
+    	ArrayList<int[]> knightDir = unitDirections.get("knight")
+    	int knightOffsetX;
+    	int knightOffsetY;
+    
+    	for(i = 0; i < knightDir.size(); i++) {
+	    		//first knight
+    		knightOffsetX = knightDir.get(i)[0];
+    		knightOffsetY = knightDir.get(i)[1];
+    	
+    		if (knight1[0] * knightOffsetX < 0 || knight1[0] * knightOffsetX >= ChessAI.BOARD_SIZE || knight1[1] * knightOffsetY < 0 || knight1[1] * knightOffsetY >= ChessAI.BOARD_SIZE) {
+	    		char[][] succState1 = board;
+	    		succState1[knight1[0]][knight1[1]] = '_';
+	    		succState1[knight1[0] * ][knight1[1] * ] = updatingPiece;
+	    		knightStates.add(succState1);
+	    		}
+	    		// second knight
+	    	if (knight2[0] * knightOffsetX < 0 || knight2[0] * knightOffsetX >= ChessAI.BOARD_SIZE || knight2[1] * knightOffsetY < 0 || knight2[1] * knightOffsetY >= ChessAI.BOARD_SIZE) {
+	    		char[][] succState2 = board;
+	    		succState2[knight2[0]][knight2[1]] = '_';
+	    		succState2[knight2[0] * knightDir.get(i)[0]][knight2[1] * knightDir.get(i)[1]] = updatingPiece;
+	    		knightStates.add(succState2);
+	    	}
+    	}
+    	return knightStates;
+    }
+    
 
     // 1. Is King in check? (Do this by imagining King is all of the pieces and seeing if any opponent pieces are the first thing we hit.)
     // 2. First, compute valid moves for King (aka moves in which it's not checked)
@@ -104,8 +151,8 @@ public class BoardStateManager
     	nextKingStateHelper(board, allStates);
 
     	// Is king checked?
-    	// Also compute all the pins in computeCheckPositions. goFurther has to be True here
-    	ArrayList<Integer[]> checkPositions = computeCheckPositions(board);
+    	// Also compute all the pins in computeCheckPositions. goFurther has to be true here
+    	ArrayList<int[]> checkPositions = computeCheckPositions(board);
 
     	// If so, is it double checked?
     	if (checkPositions.get(1) != null) {
@@ -137,26 +184,32 @@ public class BoardStateManager
     	return allStates;
     }
 
+    */
+
     // Helper Method that determines if square is controlled by something 
     // NOTE: We find all the possible pieces that can control currPos of the OPPOSING COLOR
     // SOOOO to find blocking pieces for CURR COLOR, we must pose as the OPPOSING COLOR
     // mode can be kingMove, blocking, eating
-    public ArrayList<ArrayList<Integer[]>> isControlled(char[][] board, int[] currPos, String currColor, boolean goFurther, String mode)
+    public ArrayList<ArrayList<int[]>> isControlled(char[][] board, int[] currPos, String currColor, boolean goFurther, String mode)
     {
-    	ArrayList<Integer[]> controlledFromPos = new ArrayList<>();
-    	ArrayList<Integer[]> pinList = null;
+    	ArrayList<int[]> controlledFromPos = new ArrayList<>();
+    	ArrayList<int[]> pinList = null;
     	if (goFurther)
     		pinList = new ArrayList<>();
 
-    	for (HashMap.Entry<String, ArrayList<Integer[]>> entry : unitDirections.entrySet())
+    	for (HashMap.Entry<String, ArrayList<int[]>> entry : unitDirections.entrySet())
     	{
 			// Iterate from pos in unitDirection until hit some piece. 
 			// The piece can be our piece or opponent piece. If opponent piece, we go on to next unit direction.
 			// If our piece, if we're not trying to fill the pin list, we stop. Otherwise, continue until we hit another piece.
 			// If the second piece we hit is our piece or edge of board, remove from pin list and stop.
 			// If second piece we hit is opponent piece, go on to next unit direction.
-			ArrayList<Integer[]> directions = entry.getValue();
+			ArrayList<int[]> directions = entry.getValue();
 			String pieceType = entry.getKey();
+
+			System.out.println();
+    		System.out.println("PieceType: " + pieceType);
+
 			ArrayList<Character> possiblePieces = new ArrayList<>();
 			if (pieceType.equals("diagonal")) {
 				possiblePieces.add('q');
@@ -187,9 +240,15 @@ public class BoardStateManager
 				possiblePieces.add('n');
 			}
 
-			if (currColor.equals("black")) {
+			// Remember, possiblePieces are of the OPPOSITE team
+			if (currColor.equals("white")) {
 				for (int i = 0; i < possiblePieces.size(); i++)
 					possiblePieces.set(i, Character.toUpperCase(possiblePieces.get(i)));
+			}
+
+			System.out.print("Possible Pieces:");
+			for (char piece : possiblePieces) {
+				System.out.println(piece);
 			}
 
 			// Pawns can move twice if we're two away from pawn starting row
@@ -205,26 +264,33 @@ public class BoardStateManager
 				}
 			}
 
+			//System.out.println("PawnMoveMax: " + pawnMoveMax);
+
 			// Directions that correspond to the current PieceType
-			for (Integer[] dir : directions) 
+			for (int[] dir : directions) 
 			{
+				System.out.println("Considering direction " + "(" + dir[0] + ", " + dir[1] + ") from (" + 
+					currPos[0] + ", " + currPos[1] + ")");
+
 				// This can be done using a ternary
 				boolean findPins = goFurther;
 				if (pieceType.equals("knight")) // Knights can't result in pin
-					findPins = False;
+					findPins = false;
 
-				boolean pinnedOne = False;
+				boolean pinnedOne = false;
 
 				int moveCount = 0;			// King and knight become invalid after 1 move
-				Integer[] pos = currPos;
+				int[] pos = new int[]{currPos[0], currPos[1]};
 
 				directionLoop:
-				while (True) 
+				while (true) 
 				{
 					// I'm 90% sure this is important to do first to ensure that king taking a bishop in a reveal check from rook
 					// will be a valid move
 					pos[0] += dir[0];
 					pos[1] += dir[1];
+
+					System.out.println("\tChecking out board[" + pos[0] + "][" + pos[1] + "], which has char " + board[pos[0]][pos[1]]);
 
 					// Board bounds
 					if (pos[0] < 0 || pos[0] >= ChessAI.BOARD_SIZE || pos[1] < 0 || pos[1] >= ChessAI.BOARD_SIZE) {
@@ -238,7 +304,8 @@ public class BoardStateManager
 					if (findPins && ((currColor.equals("white") && Character.isLowerCase(board[pos[0]][pos[1]])) ||
 									 (currColor.equals("black") && Character.isUpperCase(board[pos[0]][pos[1]])))) {
 						pinList.add(pos);
-						pinnedOne = True;
+						pinnedOne = true;
+						System.out.println("Pinned one!");
 						findPins = !findPins;
 						moveCount++;
 						continue;
@@ -261,14 +328,18 @@ public class BoardStateManager
 
 						// White pawn can only move down the board (row increases)
 						// Black pawn can only move up the board (row decreases)
-						if ((piece == 'p' && dir[0] != 1) || (piece == 'P' && dir[0] != -1)) {
+						// Which means...the direction of exploration has to be row decreases to find a possible
+						// controlling white pawn and vice versa for black!
+						if ((piece == 'p' && dir[0] != -1) || (piece == 'P' && dir[0] != 1)) {
 							continue;
 						}
 
 						// Stop going in this direction. Btw we now have a pinned piece (if we were searching for that).
 						if (board[pos[0]][pos[1]] == piece) {
-							controlledFromPos.add(pos);
-							break directionloop;
+							System.out.println("Found a controlling piece: " + piece);
+							if (!pinnedOne)
+								controlledFromPos.add(pos);
+							break directionLoop;
 						}
 					}
 
@@ -282,17 +353,20 @@ public class BoardStateManager
 						break;
 					}
 
-					// Knight moves once per direction. Don't need to worry about removing from pinlist b/c findPin is False for Knight
+					// Knight moves once per direction. Don't need to worry about removing from pinlist b/c findPin is false for Knight
 					if (pieceType.equals("knight")) break;
 
 					moveCount++;
 				}
 			}
     	}
-
-    	return new ArrayList<ArrayList<Integer[]>>(){controlledFromPos, pinList};
+    	ArrayList<ArrayList<int[]>> controlInfo = new ArrayList<>();
+    	controlInfo.add(controlledFromPos);
+    	controlInfo.add(pinList);
+    	return controlInfo;
     }
 
+   	/*
    	// Lookup position in curPos hashmap based on team 
    	// use unit directions hashmap to generate all of the possible successor states
    	public ArrayList<Character[][]> computeKnightStates()
@@ -302,14 +376,14 @@ public class BoardStateManager
     }
 
 
-    public HashMap<String, ArrayList<Integer[]>> computeValidMoves(ArrayList<ArrayList<String>> board, String currTeam)
+    public HashMap<String, ArrayList<int[]>> computeValidMoves(ArrayList<ArrayList<String>> board, String currTeam)
 	{
-		Hashmap<String, ArrayList<Integer[]>> viableMoves = new Hashmap<>();
+		Hashmap<String, ArrayList<int[]>> viableMoves = new Hashmap<>();
 		piece =  new Piece(); // need to import piece class
 		Integer currKing[] = new Integer[2];
 
 		// List to temporarily hold king moves before placing in hashmap 
-		ArrayList<Integer[]> kingMovesTemp;
+		ArrayList<int[]> kingMovesTemp;
 		// Array holding type and str position of piece putting king in check
 		String checkOne[] = new String[2];
 		String checkTwo[] = new Sting[2];
@@ -405,6 +479,7 @@ public class BoardStateManager
     
 
 /* No more mapping 
+*/
 
   
 }
