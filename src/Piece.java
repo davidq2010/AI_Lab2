@@ -5,6 +5,8 @@ public class Piece {
 	private ArrayList<Integer[]> bishopDir;
 	private ArrayList<Integer[]> rookDir;
 	private ArrayList<Integer[]> pawnDir;
+
+
 	public Piece()
 	{
 		Integer[] dir = {1,0}

@@ -2,20 +2,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.lang.Math;
+import java.lang.Character;
 
 public class BoardStateManager
 {	// HashMap storing value of pieces
-	private HashMap<String, Float> pieceVal;
+	private HashMap<Character, Float> pieceVal;
 	// HashMap for a1 - h8 coords to numerical coordinates
 	//private HashMap<String, Integer[]> strToCoord;
+
+	private HashMap<String, ArrayList<Integer[]>> unitDirections;
 
 	// HashMap for numerical to a1-h8 coords
 	//private HashMap<Integer[], String> coordToStr;
 	// HashMap for Storing valid moves of current team
-	private HashMap<String, ArrayList<Integer[]>> validMoves;
+	private HashMap<Character, ArrayList<Integer[]>> validMoves;
 
 	// Hashmap to store current chess piece positions 
-	private HashMap<String, String[]> currPos;
+	private HashMap<Character, Integer[]> currPos;
 
 	private Integer blackKing[];
 	private Integer whiteKing[];
@@ -23,20 +26,43 @@ public class BoardStateManager
 	public BoardStateManager() 
 	{
 		this.pieceVal = new HashMap<>() {{
-			put("Q", 9.0),
-			put("q", 9.0),
-			put("R", 5.0),
-			put("r", 5.0),
-			put("B", 3.0),
-			put("b", 3.0),
-			put("N", 3.0),
-			put("n", 3.0),
-			put("P", 1.0),
-			put("p", 1.0),
-			put("_", 0.0)
+			put('q', 9.0),
+			put('r', 5.0),
+			put('b', 3.0),
+			put('n', 3.0),
+			put('p', 1.0),
+			put('_', 0.0)
 		}};
 
-		this.strToCoord = computeStrToNumCoord()
+		unitDirections = new HashMap<>();
+
+		ArrayList<Integer[]> diagonal = new ArrayList<>();
+		diagonal.add(new int[]{1, 1});
+		diagonal.add(new int[]{-1, -1});
+		diagonal.add(new int[]{1, -1});
+		diagonal.add(new int[]{-1, 1});
+		unitDirections.put("diagonal", diagonal);
+
+		ArrayList<Integer[]> grid = new ArrayList<>();
+		grid.add(new int[]{1, 0});
+		grid.add(new int[]{-1, 0});
+		grid.add(new int[]{0, 1});
+		grid.add(new int[]{0, -1});
+		unitDirections.put("grid", grid);
+
+		ArrayList<Integer[]> knight = new ArrayList<>();
+		knight.add(new int[]{2, 1});
+		knight.add(new int[]{2, -1});
+		knight.add(new int[]{1, 2});
+		knight.add(new int[]{1, -2});
+		knight.add(new int[]{-2, 1});
+		knight.add(new int[]{-2, -1});
+		knight.add(new int[]{-1, 2});
+		knight.add(new int[]{-1, -2});
+		unitDirections.put("knight", knight);
+
+
+		this.strToCoord = computeStrToNumCoord();
 
 	}
 
@@ -55,13 +81,213 @@ public class BoardStateManager
 		return score;
 	}
 
-	public void printBoard(ArrayList<ArrayList<String>> board) {
-        for (int i = 0; i < board.size(); i++) {
-            for (int j = 0; j < board.get(0).size(); j++) {
-                System.out.print(board.get(i).get(j) + " ");
+    public void printBoard(char[][] board) {
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                System.out.print(board[i][j] + " ");
             }
             System.out.println();
         }
+    }
+
+    // 1. Is King in check? (Do this by imagining King is all of the pieces and seeing if any opponent pieces are the first thing we hit.)
+    // 2. First, compute valid moves for King (aka moves in which it's not checked)
+    // 3. Are we double checked? If so, return list of king moves.
+    // 4. If single checked, add options of eat, block to the original list of moves.
+    // 5. For eating and blocking, make sure the piece isn't pinned. (Make sure that the piece we're considering moving is not the only piece
+    // between the king and sliding piece.)
+    public ArrayList<Character[][]> computeKingStates(char[][] board, String color) {
+    	ArrayList<Character[][]> allStates = new ArrayList<>();
+
+    	// Compute valid king states
+    	// For each king move, make sure it won't be checked
+    	nextKingStateHelper(board, allStates);
+
+    	// Is king checked?
+    	// Also compute all the pins in computeCheckPositions. goFurther has to be True here
+    	ArrayList<Integer[]> checkPositions = computeCheckPositions(board);
+
+    	// If so, is it double checked?
+    	if (checkPositions.get(1) != null) {
+    		return allStates;
+    	}
+
+    	// Generate eating states
+    	// Radiate from the checking enemy piece; for each piece that isn't on the pin list, using that piece to eat results in a valid state
+    	eatEnemyCheckHelper(board, allStates, checkPositions.get(0));
+
+    	// Is it a knight?
+    	int checkPosI = checkPositions.get(0)[0];
+    	int checkPosJ = checkPositions.get(0)[1];
+    	if (Character.toLowerCase(board[checkPosI][checkPosJ]) == 'n') {
+    		return allStates;
+    	} 
+
+    	// Generate blocking states
+    	// Consider all squares between our king and the checking piece. For each of those squares, call IsControlled()
+    	int[] kingPos;
+    	if (color.equals("white")) {
+    		kingPos = currPos.get('K');
+    	}
+    	else {
+    		kingPos = currPos.get('k');
+    	}
+    	computeBlockingStates(board, allStates, checkPositions.get(0), kingPos);
+
+    	return allStates;
+    }
+
+    // Helper Method determines if square is controlled by something 
+    // NOTE: We find all the possible pieces that can control currPos of the OPPOSING COLOR
+    // SOOOO to find blocking pieces for CURR COLOR, we must pose as the OPPOSING COLOR
+    // mode can be kingMove, blocking, eating
+    public ArrayList<ArrayList<Integer[]>> isControlled(char[][] board, int[] currPos, String currColor, boolean goFurther, String mode)
+    {
+    	ArrayList<Integer[]> controlledFromPos = new ArrayList<>();
+    	ArrayList<Integer[]> pinList = null;
+    	if (goFurther)
+    		pinList = new ArrayList<>();
+
+    	for (HashMap.Entry<String, ArrayList<Integer[]>> entry : unitDirections.entrySet())
+    	{
+			// Iterate from pos in unitDirection until hit some piece. If that piece is opponent piece that we expected, go to next UnitDirection
+			ArrayList<Integer[]> directions = entry.getValue();
+			String pieceType = entry.getKey();
+			ArrayList<Character> possiblePieces = new ArrayList<>();
+			if (pieceType.equals("diagonal")) {
+				possiblePieces.add('q');
+				possiblePieces.add('b');
+				if (mode.equals("kingMove")) {
+					possiblePieces.add('p');
+					possiblePieces.add('k');
+				}
+				else if (mode.equals("eating")) {
+					possiblePieces.add('p');
+					// Commented out b/c we could have this state appear as duplicate. If king can escape check by eating, that's the same as 
+					// moving to that square, which would have already been computed as a move.
+					//possiblePieces.add('k'); 
+				}
+			}
+			else if (pieceType.equals("grid")) {
+				possiblePieces.add('q');
+				possiblePieces.add('r');
+				if (mode.equals("blocking")) {
+					possiblePieces.add('p');
+				}
+				// No eating mode for same reason as above
+				else if (mode.equals("kingMove")) {
+					possiblePieces.add('k');
+				}
+			}
+			else if (pieceType.equals("knight")) {
+				possiblePieces.add('n');
+			}
+
+			if (currColor.equals("black")) {
+				for (int i = 0; i < possiblePieces.size(); i++)
+					possiblePieces.set(i, Character.toUpperCase(possiblePieces.get(i)));
+			}
+
+			// Pawns can move twice if we're two away from pawn starting row
+			// Remember, when blocking we pose as the opponent. So it's really that white can be at row 3 and
+			// black can be at row 4.
+			int pawnMoveMax = 1;
+			if (pieceType.equals("grid") && mode.equals("blocking")) {
+				if (currColor.equals("black") && currPos[0] == 3) {
+					pawnMoveMax++;
+				}
+				else if (currColor.equals("white") && currPos[0] == 4) {
+					pawnMoveMax++;
+				}
+			}
+
+			// Directions that correspond to the current PieceType
+			for (Integer[] dir : directions) 
+			{
+				boolean findPins = goFurther;
+				if (pieceType.equals("knight")) // Knights can't result in pin
+					findPins = False;
+
+				boolean pinnedOne = False;
+
+				int moveCount = 0;			// King and knight become invalid after 1 move
+				Integer[] pos = currPos;
+
+				directionLoop:
+				while (True) 
+				{
+					// I'm 90% sure this is important to do first to ensure that king taking a bishop in a reveal check from rook
+					// will be a valid move
+					pos[0] += dir[0];
+					pos[1] += dir[1];
+
+					// Board bounds
+					if (pos[0] < 0 || pos[0] >= ChessAI.BOARD_SIZE || pos[1] < 0 || pos[1] >= ChessAI.BOARD_SIZE) break;
+
+					// If we hit our own piece first it can't be enemy desired piece so we either go further or stop trying this direction
+					if (findPins && ((currColor.equals("white") && Character.isLowerCase(board[pos[0]][pos[1]])) ||
+									 (currColor.equals("black") && Character.isUpperCase(board[pos[0]][pos[1]])))) {
+						pinList.add(pos);
+						pinnedOne = True;
+						findPins = !findPins;
+						moveCount++;
+						continue;
+					}
+					else if (!findPins && ((currColor.equals("white") && Character.isLowerCase(board[pos[0]][pos[1]])) ||
+										   (currColor.equals("black") && Character.isUpperCase(board[pos[0]][pos[1]])))) {
+						if (pinnedOne) {
+							pinList.remove(pinList.size()-1);
+						}
+						break;
+					}
+
+					// See if any of the desired pieces are found
+					for (char piece : possiblePieces) {
+						// Kings can only move once in a given direction
+						if (moveCount > 0 && Character.toLowerCase(piece) == 'k') continue;
+
+						// Pawns can only move once (or twice if grid) in a given direction
+						if (moveCount >= pawnMoveMax && Character.toLowerCase(piece) == 'p') continue;
+
+						// White pawn can only move down the board (row increases)
+						// Black pawn can only move up the board (row decreases)
+						if ((piece == 'p' && dir[0] != 1) || (piece == 'P' && dir[0] != -1)) {
+							continue;
+						}
+
+						// Stop going in this direction. Btw we now have a pinned piece (if we were searching for that).
+						if (board[pos[0]][pos[1]] == piece) {
+							controlledFromPos.add(pos);
+							break directionloop;
+						}
+					}
+
+					// If we hit a piece of opposite color that wasn't a desired piece
+					if ((currColor.equals("white") && Character.isUpperCase(board[pos[0]][pos[1]])) ||
+						(currColor.equals("black") && Character.isLowerCase(board[pos[0]][pos[1]]))) {
+						if (pinnedOne) {
+							pinList.remove(pinList.size()-1);
+						}
+						break;
+					}
+
+					// Knight moves once per direction
+					if (pieceType.equals("knight")) break;
+
+					moveCount++;
+				}
+			}
+    	}
+
+    	return new ArrayList<ArrayList<Integer[]>>(){controlledFromPos, pinList};
+    }
+
+   	// Lookup position in curPos hashmap based on team 
+   	// use unit directions hashmap to generate all of the possible successor states
+   	public ArrayList<Character[][]> computeKnightStates()
+    {
+
+    	if(currPos.get())
     }
 
 
@@ -165,141 +391,9 @@ public class BoardStateManager
     	return checkPieces;
     }
 
-    // Helper Method determins if square is controlled by something 
-    public boolean isControlled(ArrayList<ArrayList<String>> board, int x, int y, String adversaryTeam)
-    {
-    	//TO-DO00
-    	//boolean  controlled = false;
-    	if(board.get(x).get(y) != "_")
-    	{
-    		return true;
-    	}
-    	
-    	// Sliding pieces
-    	Integer dir[] = new Integer[2];
-    	int offsetX;
-    	int offsetY;
-    	int tempX;
-    	int tempY;
-    	String grid;
-    	for(int i = 0; i < board.size() - x; i++)
-    	{
-    		for(k = 0; k < board.get(0).size - y; k++)
-    		{
-	    		for(int j = 0; j < piece.qkDir.size(); j++)
-	    		{
-	    			dir = piece.qkDir.get(j);
-	    			offsetX = dir[0] * (i+1);
-	    			offsetY = dir[1] * (j+1);
-	    			tempX = x + offsetX;
-	    			tempY = y + offsetY;
-	    			grid = board.get(tempX).get(tempY);
-
-	    			if(grid != "_")
-	    			{
-	    				if((grid == "P" && adversaryTeam == "white") || (grid == "p" && adversaryTeam = "black"))
-	    				{
-	    					if(Math.abs(offsetY) - Math.abs(offsetX) == 0)
-	    					{
-	    						return true;
-	    					}
-	    				}
-
-	    				if((grid == "N" && adversaryTeam == "white") || (grid == "n" && adversaryTeam = "black"))
-	    				{
-	    					if(Math.abs(offsetY) - Math.abs(offsetX) != 0)
-	    					{
-	    						return true;
-	    					}
-	    				}
-
-	    				if((grid == "Q" && adversaryTeam == "white") || (grid == "q" && adversaryTeam = "black"))
-	    				{
-	    						return true;
-	    					
-	    				}
-
-
-	    			}
-	    		}
-	    	}
-    		
-    	}
-    }
+    
 
 /* No more mapping 
 
-    public HashMap<String,Integer[]> computeStrToNumCoord()
-    {
-    		HashMap<String, Integer[]> mapping = new HashMap<>() {{
-			put("a1", new Integer[] = {1,1}),
-			put("a2", new Integer[] = {1,2}),
-			put("a3", new Integer[] = {1,3}),
-			put("a4", new Integer[] = {1,4}),
-			put("a5", new Integer[] = {1,5}),
-			put("a6", new Integer[] = {1,6}),
-			put("a7", new Integer[] = {1,7}),
-			put("a8", new Integer[] = {1,8}),
-			put("b1", new Integer[] = {2,1}),
-			put("b2", new Integer[] = {2,2}),
-			put("b3", new Integer[] = {2,3}),
-			put("b4", new Integer[] = {2,4}),
-			put("b5", new Integer[] = {2,5}),
-			put("b6", new Integer[] = {2,6}),
-			put("b7", new Integer[] = {2,7}),
-			put("b8", new Integer[] = {2,8}),
-			put("c1", new Integer[] = {3,1}),
-			put("c2", new Integer[] = {3,2}),
-			put("c3", new Integer[] = {3,3}),
-			put("c4", new Integer[] = {3,4}),
-			put("c5", new Integer[] = {3,5}),
-			put("c6", new Integer[] = {3,6}),
-			put("c7", new Integer[] = {3,7}),
-			put("c8", new Integer[] = {3,8}),
-			put("d1", new Integer[] = {4,1}),
-			put("d2", new Integer[] = {4,2}),
-			put("d3", new Integer[] = {4,3}),
-			put("d4", new Integer[] = {4,4}),
-			put("d5", new Integer[] = {4,5}),
-			put("d6", new Integer[] = {4,6}),
-			put("d7", new Integer[] = {4,7}),
-			put("d8", new Integer[] = {4,8}),
-			put("e1", new Integer[] = {5,1}),
-			put("e2", new Integer[] = {5,2}),
-			put("e3", new Integer[] = {5,3}),
-			put("e4", new Integer[] = {5,4}),
-			put("e5", new Integer[] = {5,5}),
-			put("e6", new Integer[] = {5,6}),
-			put("e7", new Integer[] = {5,7}),
-			put("e8", new Integer[] = {5,8}),
-			put("f1", new Integer[] = {6,1}),
-			put("f2", new Integer[] = {6,2}),
-			put("f3", new Integer[] = {6,3}),
-			put("f4", new Integer[] = {6,4}),
-			put("f5", new Integer[] = {6,5}),
-			put("f6", new Integer[] = {6,6}),
-			put("f7", new Integer[] = {6,7}),
-			put("f8", new Integer[] = {6,8}),
-			put("g1", new Integer[] = {7,1}),
-			put("g2", new Integer[] = {7,2}),
-			put("g3", new Integer[] = {7,3}),
-			put("g4", new Integer[] = {7,4}),
-			put("g5", new Integer[] = {7,5}),
-			put("g6", new Integer[] = {7,6}),
-			put("g7", new Integer[] = {7,7}),
-			put("g8", new Integer[] = {7,8}),
-			put("h1", new Integer[] = {8,1}),
-			put("h2", new Integer[] = {8,2}),
-			put("h3", new Integer[] = {8,3}),
-			put("h4", new Integer[] = {8,4}),
-			put("h5", new Integer[] = {8,5}),
-			put("h6", new Integer[] = {8,6}),
-			put("h7", new Integer[] = {8,7}),
-			put("h8", new Integer[] = {8,8}),
-
-		}};
-		return mapping;
-		
-    }
-    */
+  
 }
