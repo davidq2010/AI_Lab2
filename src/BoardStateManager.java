@@ -137,7 +137,7 @@ public class BoardStateManager
     	return allStates;
     }
 
-    // Helper Method determines if square is controlled by something 
+    // Helper Method that determines if square is controlled by something 
     // NOTE: We find all the possible pieces that can control currPos of the OPPOSING COLOR
     // SOOOO to find blocking pieces for CURR COLOR, we must pose as the OPPOSING COLOR
     // mode can be kingMove, blocking, eating
@@ -150,7 +150,11 @@ public class BoardStateManager
 
     	for (HashMap.Entry<String, ArrayList<Integer[]>> entry : unitDirections.entrySet())
     	{
-			// Iterate from pos in unitDirection until hit some piece. If that piece is opponent piece that we expected, go to next UnitDirection
+			// Iterate from pos in unitDirection until hit some piece. 
+			// The piece can be our piece or opponent piece. If opponent piece, we go on to next unit direction.
+			// If our piece, if we're not trying to fill the pin list, we stop. Otherwise, continue until we hit another piece.
+			// If the second piece we hit is our piece or edge of board, remove from pin list and stop.
+			// If second piece we hit is opponent piece, go on to next unit direction.
 			ArrayList<Integer[]> directions = entry.getValue();
 			String pieceType = entry.getKey();
 			ArrayList<Character> possiblePieces = new ArrayList<>();
@@ -204,6 +208,7 @@ public class BoardStateManager
 			// Directions that correspond to the current PieceType
 			for (Integer[] dir : directions) 
 			{
+				// This can be done using a ternary
 				boolean findPins = goFurther;
 				if (pieceType.equals("knight")) // Knights can't result in pin
 					findPins = False;
@@ -222,7 +227,12 @@ public class BoardStateManager
 					pos[1] += dir[1];
 
 					// Board bounds
-					if (pos[0] < 0 || pos[0] >= ChessAI.BOARD_SIZE || pos[1] < 0 || pos[1] >= ChessAI.BOARD_SIZE) break;
+					if (pos[0] < 0 || pos[0] >= ChessAI.BOARD_SIZE || pos[1] < 0 || pos[1] >= ChessAI.BOARD_SIZE) {
+						if (pinnedOne) 
+							pinList.remove(pinList.size()-1);
+						
+						break;
+					}
 
 					// If we hit our own piece first it can't be enemy desired piece so we either go further or stop trying this direction
 					if (findPins && ((currColor.equals("white") && Character.isLowerCase(board[pos[0]][pos[1]])) ||
@@ -262,7 +272,8 @@ public class BoardStateManager
 						}
 					}
 
-					// If we hit a piece of opposite color that wasn't a desired piece
+					// If we hit a piece of opposite color that wasn't a desired piece 
+					// (if it was a desired piece we'd be out of the loop by now)
 					if ((currColor.equals("white") && Character.isUpperCase(board[pos[0]][pos[1]])) ||
 						(currColor.equals("black") && Character.isLowerCase(board[pos[0]][pos[1]]))) {
 						if (pinnedOne) {
@@ -271,7 +282,7 @@ public class BoardStateManager
 						break;
 					}
 
-					// Knight moves once per direction
+					// Knight moves once per direction. Don't need to worry about removing from pinlist b/c findPin is False for Knight
 					if (pieceType.equals("knight")) break;
 
 					moveCount++;
