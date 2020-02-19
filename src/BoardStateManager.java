@@ -303,7 +303,7 @@ public class BoardStateManager
 					// If we hit our own piece first it can't be enemy desired piece so we either go further or stop trying this direction
 					if (findPins && ((currColor.equals("white") && Character.isLowerCase(board[pos[0]][pos[1]])) ||
 									 (currColor.equals("black") && Character.isUpperCase(board[pos[0]][pos[1]])))) {
-						pinList.add(pos);
+						pinList.add(new int[]{pos[0], pos[1]});
 						pinnedOne = true;
 						System.out.println("Pinned one!");
 						findPins = !findPins;
@@ -315,7 +315,8 @@ public class BoardStateManager
 						if (pinnedOne) {
 							pinList.remove(pinList.size()-1);
 						}
-						break;
+						break
+						;
 					}
 
 					// See if any of the desired pieces are found
@@ -329,7 +330,8 @@ public class BoardStateManager
 						// White pawn can only move down the board (row increases)
 						// Black pawn can only move up the board (row decreases)
 						// Which means...the direction of exploration has to be row decreases to find a possible
-						// controlling white pawn and vice versa for black!
+						// controlling white pawn and vice versa for black
+
 						if ((piece == 'p' && dir[0] != -1) || (piece == 'P' && dir[0] != 1)) {
 							continue;
 						}
