@@ -91,6 +91,17 @@ public class TestIsControlled {
 		}
 	}
 
+	public static void testTheWholeShebang(BoardStateManager bm, char[][] board) {
+		String currColor = "black";
+		int[] kingPos = findPiece(board, 'K');
+		System.out.println("KingPos: " + "(" + kingPos[0] + ", " + kingPos[1] + ")");
+		ArrayList<char[][]> states = bm.computeKingStates(board, kingPos, currColor);
+		for (char[][] state : states) {
+			ChessAI.printBoard(state);
+			System.out.println();
+		}
+	}
+
 	public static void main(String[] args) throws IOException {
 		if (args.length != 1) {
             System.out.println("Usage: java Chess <inputFile>");
@@ -105,6 +116,7 @@ public class TestIsControlled {
 		//testKingIsChecked(bm, board);
 		//testBlockingCheck(bm, board);
 		//testKingMoveGen(bm, board);
-		testKingStateHelper(bm, board);
+		//testKingStateHelper(bm, board);
+		testTheWholeShebang(bm, board);
 	}
 }

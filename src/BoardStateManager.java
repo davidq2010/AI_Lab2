@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
@@ -139,67 +140,128 @@ public class BoardStateManager
     	}
     	return knightStates;
     }
+    */
+
     // 1. Is King in check? (Do this by imagining King is all of the pieces and seeing if any opponent pieces are the first thing we hit.)
     // 2. First, compute valid moves for King (aka moves in which it's not checked)
     // 3. Are we double checked? If so, return list of king moves.
     // 4. If single checked, add options of eat, block to the original list of moves.
     // 5. For eating and blocking, make sure the piece isn't pinned. (Make sure that the piece we're considering moving is not the only piece
     // between the king and sliding piece.)
-    public ArrayList<char[][]> computeKingStates(char[][] board, String color) {
+    public ArrayList<char[][]> computeKingStates(char[][] board, int[] kingPos, String color) {
     	ArrayList<char[][]> allStates = new ArrayList<>();
 
     	// Compute valid king states
     	// For each king move, make sure it won't be checked
-    	nextKingStateHelper(board, allStates, color);
+    	System.out.println("!!!!!!!Computing King States!!!!!");
+    	nextKingStateHelper(board, allStates, kingPos, color);
 
     	// Is king checked?
     	// Also compute all the pins in computeCheckPositions. goFurther has to be true here
-    	ArrayList<int[]> checkPositions = computeCheckPositions(board);
+    	System.out.println("!!!!!!!Positions Checking King And Pins!!!!!");
+        ArrayList<ArrayList<int[]>>	checkAndPinPositions = computeCheckAndPinPositions(board, kingPos, color);
 
     	// If so, is it double checked?
-    	if (checkPositions.get(1) != null) {
+    	if (checkAndPinPositions.get(0).size() > 1) {
     		return allStates;
     	}
 
+    	int[] checkingPos = checkAndPinPositions.get(0).get(0);
+    	System.out.println("\tChecking King from (" + checkingPos[0] + ", " + checkingPos[1] + ")");
+    	ArrayList<int[]> pinList = checkAndPinPositions.get(1);
+
+    	System.out.println("!!!!!!Tryna Eat!!!!!!!!!");
     	// Generate eating states
     	// Radiate from the checking enemy piece; for each piece that isn't on the pin list, using that piece to eat results in a valid state
-    	eatEnemyCheckHelper(board, allStates, checkPositions.get(0));
+    	eatEnemyCheckHelper(board, allStates, checkingPos, pinList, color);
 
     	// Is it a knight?
-    	int checkPosI = checkPositions.get(0)[0];
-    	int checkPosJ = checkPositions.get(0)[1];
-    	if (Character.toLowerCase(board[checkPosI][checkPosJ]) == 'n') {
+    	if (Character.toLowerCase(board[checkingPos[0]][checkingPos[1]]) == 'n') {
     		return allStates;
-    	} 
+    	}
 
+    	System.out.println("!!!!!!Tryna Block!!!!!!!!!");
     	// Generate blocking states
     	// Consider all squares between our king and the checking piece. For each of those squares, call IsControlled()
-    	int[] kingPos;
-    	if (color.equals("white")) {
-    		kingPos = currPos.get('K');
-    	}
-    	else {
-    		kingPos = currPos.get('k');
-    	}
-    	computeBlockingStates(board, allStates, checkPositions.get(0), kingPos);
+    	System.out.println("StartPos: (" + kingPos[0] + ", " + kingPos[1] + ")");
+    	System.out.println("EndPos: (" + checkingPos[0] + ", " + checkingPos[1] + ")");
+    	computeBlockingStates(board, allStates, kingPos, checkingPos, pinList, color);
 
     	return allStates;
     }
-    */
 
-    ArrayList<ArrayList<int[]>> computeCheckPositions(char[][] board, int[] kingPos, String color) {
+    // start and end pos here are exclusive
+    void computeBlockingStates(char[][] board, ArrayList<char[][]> states, int[] startPos, int[] endPos, 
+    	ArrayList<int[]> pinList, String color) {
+    	// Compute "slope" between start and end; guaranteed to either be vert, horiz, diagonal
+    	int dRow = endPos[0] - startPos[0];
+    	int dCol = endPos[1] - startPos[1];
+
+    	if (dRow != 0) {
+    		dRow /= Math.abs(dRow);
+    	}
+    	if (dCol != 0) {
+    		dCol /= Math.abs(dCol);
+    	}
+
+    	int[] pos = new int[]{startPos[0] + dRow, startPos[1] + dCol};
+
+    	boolean findPins = false;
+    	String mode = "blocking";
+
+    	System.out.println("Iterating til EndPos: (" + endPos[0] + ", " + endPos[1] + ")");
+
+    	while (!Arrays.equals(pos, endPos)) {
+    		System.out.println("Blocking at pos (" + pos[0] + ", " + pos[1] + ")");
+    		ArrayList<int[]> blockerOptions = isControlled(board, pos, color.equals("black") ? "white" : "black",
+    			findPins, mode).get(0);
+    		blockerLoop:
+    		for (int[] blocker : blockerOptions) {
+	    		for (int[] pinner : pinList) {
+	    			if (Arrays.equals(blocker, pinner)) {
+	    				continue blockerLoop; // Go to next blocker
+	    			}
+	    		}
+	    		// Add blocker to states
+	    		states.add(newStateGenerator(board, blocker, pos, board[blocker[0]][blocker[1]]));
+    		}
+
+    		pos[0] += dRow;
+    		pos[1] += dCol;
+    	}
+    }
+
+    void eatEnemyCheckHelper(char[][] board, ArrayList<char[][]> states, int[] pos, ArrayList<int[]> pinList, String color) {
+    	String mode = "eating";
+    	boolean findPins = false;
+    	ArrayList<int[]> eaterOptions = isControlled(board, pos, color.equals("black") ? "white" : "black", 
+    		findPins, mode).get(0);
+    	eaterLoop:
+    	for (int[] eater : eaterOptions) {
+    		// TODO: pinList could be a HashSet
+    		for (int[] pinner : pinList) {
+    			if (Arrays.equals(eater, pinner)) {
+    				continue eaterLoop; // Go to next eater
+    			}
+    		}
+    		// Add eater to states
+    		states.add(newStateGenerator(board, eater, pos, board[eater[0]][eater[1]]));
+    	}
+    }
+
+    public ArrayList<ArrayList<int[]>> computeCheckAndPinPositions(char[][] board, int[] kingPos, String color) {
     	boolean findPins = true;
     	String mode = "eating";
     	ArrayList<ArrayList<int[]>> controlInfo = isControlled(board, kingPos, color, findPins, mode);
     	return controlInfo;
     }
 
-    public char[][] newKingStateGenerator(char[][] board, int[] oldPos, int[] newPos, String color) {
+    public char[][] newStateGenerator(char[][] board, int[] oldPos, int[] newPos, char piece) {
 		char[][] newState = new char[ChessAI.BOARD_SIZE][];
 		for (int i = 0; i < newState.length; i++) {
 			newState[i] = board[i].clone();
 		}
-		newState[newPos[0]][newPos[1]] = color.equals("black") ? 'K' : 'k';
+		newState[newPos[0]][newPos[1]] = piece;
 		newState[oldPos[0]][oldPos[1]] = '_';
 		return newState;
     }
@@ -211,13 +273,24 @@ public class BoardStateManager
     	dirs.addAll(unitDirections.get("diagonal"));
     	for (int[] dir : dirs) {
     		int[] pos = new int[]{kingPos[0] + dir[0], kingPos[1] + dir[1]};
-    		if (inBounds(pos)) {
+    		if (inBounds(pos) && noSameTeamPiece(board, pos, color)) {
     			ArrayList<int[]> controlPos = isControlled(board, pos, color, false, "kingMove").get(0);
     			if (controlPos.isEmpty()) {
-					states.add(newKingStateGenerator(board, kingPos, pos, color));
+					states.add(newStateGenerator(board, kingPos, pos, color.equals("black") ? 'K' : 'k'));
+					System.out.println("Free Pos For King at (" + pos[0] + ", " + pos[1] + ")");
     			}
     		}
     	}
+    }
+
+    public boolean noSameTeamPiece(char[][] board, int[] pos, String color) {
+    	if (color.equals("black") && Character.isUpperCase(board[pos[0]][pos[1]])) {
+    		return false;	
+    	}
+    	else if (color.equals("white") && Character.isLowerCase(board[pos[0]][pos[1]])) {
+    		return false;
+    	}
+    	return true;
     }
 
    	public boolean inBounds(int[] pos) {
