@@ -411,7 +411,9 @@ public class BoardStateManager
 						break;
 					}
 
+					// Skip over our king if doing kingMoves
 					if (mode.equals("kingMove") && board[pos[0]][pos[1]] == (currColor.equals("white") ? 'k' : 'K')) {
+						moveCount++;
 						continue;
 					}
 
