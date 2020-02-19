@@ -4,8 +4,8 @@ _ _ R _ N _ _ _
 _ _ _ _ _ _ _ _ 
 _ _ _ r _ _ N _ 
 _ _ p _ _ _ _ _ 
-_ _ _ K B _ _ _ 
-_ _ _ _ _ _ _ _ 
+_ _ _ K _ _ _ _ 
+b _ _ _ _ _ _ _ 
 KingPos: (6, 3)
 !!!!!!!Computing King States!!!!!
 
@@ -26,7 +26,7 @@ Considering direction (0, 1) from (7, 3)
 Considering direction (0, -1) from (7, 3)
 	Checking out board[7][2], which has char _
 	Checking out board[7][1], which has char _
-	Checking out board[7][0], which has char _
+	Checking out board[7][0], which has char b
 
 PieceType: knight
 Possible Pieces:n
@@ -55,7 +55,9 @@ Considering direction (-1, -1) from (7, 3)
 	Checking out board[4][0], which has char _
 Considering direction (1, -1) from (7, 3)
 Considering direction (-1, 1) from (7, 3)
-	Checking out board[6][4], which has char B
+	Checking out board[6][4], which has char _
+	Checking out board[5][5], which has char _
+	Checking out board[4][6], which has char N
 
 PieceType: grid
 Possible Pieces:q
@@ -99,7 +101,8 @@ b
 p
 k
 Considering direction (1, 1) from (5, 3)
-	Checking out board[6][4], which has char B
+	Checking out board[6][4], which has char _
+	Checking out board[7][5], which has char _
 Considering direction (-1, -1) from (5, 3)
 	Checking out board[4][2], which has char _
 	Checking out board[3][1], which has char _
@@ -117,12 +120,71 @@ PieceType: grid
 Possible Pieces:q
 r
 k
+Considering direction (1, 0) from (6, 4)
+	Checking out board[7][4], which has char _
+Considering direction (-1, 0) from (6, 4)
+	Checking out board[5][4], which has char _
+	Checking out board[4][4], which has char _
+	Checking out board[3][4], which has char _
+	Checking out board[2][4], which has char N
+Considering direction (0, 1) from (6, 4)
+	Checking out board[6][5], which has char _
+	Checking out board[6][6], which has char _
+	Checking out board[6][7], which has char _
+Considering direction (0, -1) from (6, 4)
+	Checking out board[6][2], which has char _
+	Checking out board[6][1], which has char _
+	Checking out board[6][0], which has char _
+
+PieceType: knight
+Possible Pieces:n
+Considering direction (2, 1) from (6, 4)
+Considering direction (2, -1) from (6, 4)
+Considering direction (1, 2) from (6, 4)
+	Checking out board[7][6], which has char _
+Considering direction (1, -2) from (6, 4)
+	Checking out board[7][2], which has char _
+Considering direction (-2, 1) from (6, 4)
+	Checking out board[4][5], which has char _
+Considering direction (-2, -1) from (6, 4)
+	Checking out board[4][3], which has char r
+Considering direction (-1, 2) from (6, 4)
+	Checking out board[5][6], which has char _
+Considering direction (-1, -2) from (6, 4)
+	Checking out board[5][2], which has char p
+
+PieceType: diagonal
+Possible Pieces:q
+b
+p
+k
+Considering direction (1, 1) from (6, 4)
+	Checking out board[7][5], which has char _
+Considering direction (-1, -1) from (6, 4)
+	Checking out board[5][3], which has char _
+	Checking out board[4][2], which has char _
+	Checking out board[3][1], which has char _
+	Checking out board[2][0], which has char _
+Considering direction (1, -1) from (6, 4)
+	Checking out board[7][3], which has char _
+Considering direction (-1, 1) from (6, 4)
+	Checking out board[5][5], which has char _
+	Checking out board[4][6], which has char N
+Free Pos For King at (6, 4)
+
+PieceType: grid
+Possible Pieces:q
+r
+k
 Considering direction (1, 0) from (6, 2)
 	Checking out board[7][2], which has char _
 Considering direction (-1, 0) from (6, 2)
 	Checking out board[5][2], which has char p
 Considering direction (0, 1) from (6, 2)
-	Checking out board[6][4], which has char B
+	Checking out board[6][4], which has char _
+	Checking out board[6][5], which has char _
+	Checking out board[6][6], which has char _
+	Checking out board[6][7], which has char _
 Considering direction (0, -1) from (6, 2)
 	Checking out board[6][1], which has char _
 	Checking out board[6][0], which has char _
@@ -134,7 +196,7 @@ Considering direction (2, -1) from (6, 2)
 Considering direction (1, 2) from (6, 2)
 	Checking out board[7][4], which has char _
 Considering direction (1, -2) from (6, 2)
-	Checking out board[7][0], which has char _
+	Checking out board[7][0], which has char b
 Considering direction (-2, 1) from (6, 2)
 	Checking out board[4][3], which has char r
 Considering direction (-2, -1) from (6, 2)
@@ -170,7 +232,11 @@ r
 k
 Considering direction (1, 0) from (7, 4)
 Considering direction (-1, 0) from (7, 4)
-	Checking out board[6][4], which has char B
+	Checking out board[6][4], which has char _
+	Checking out board[5][4], which has char _
+	Checking out board[4][4], which has char _
+	Checking out board[3][4], which has char _
+	Checking out board[2][4], which has char N
 Considering direction (0, 1) from (7, 4)
 	Checking out board[7][5], which has char _
 	Checking out board[7][6], which has char _
@@ -179,7 +245,7 @@ Considering direction (0, -1) from (7, 4)
 	Checking out board[7][3], which has char _
 	Checking out board[7][2], which has char _
 	Checking out board[7][1], which has char _
-	Checking out board[7][0], which has char _
+	Checking out board[7][0], which has char b
 
 PieceType: knight
 Possible Pieces:n
@@ -239,7 +305,7 @@ Considering direction (2, 1) from (5, 2)
 Considering direction (2, -1) from (5, 2)
 	Checking out board[7][1], which has char _
 Considering direction (1, 2) from (5, 2)
-	Checking out board[6][4], which has char B
+	Checking out board[6][4], which has char _
 Considering direction (1, -2) from (5, 2)
 	Checking out board[6][0], which has char _
 Considering direction (-2, 1) from (5, 2)
@@ -263,10 +329,10 @@ Considering direction (-1, -1) from (5, 2)
 	Checking out board[3][0], which has char _
 Considering direction (1, -1) from (5, 2)
 	Checking out board[6][1], which has char _
-	Checking out board[7][0], which has char _
+	Checking out board[7][0], which has char b
+Found a controlling piece: b
 Considering direction (-1, 1) from (5, 2)
 	Checking out board[4][3], which has char r
-Free Pos For King at (5, 2)
 
 PieceType: grid
 Possible Pieces:q
@@ -284,7 +350,7 @@ Considering direction (0, 1) from (7, 2)
 	Checking out board[7][7], which has char _
 Considering direction (0, -1) from (7, 2)
 	Checking out board[7][1], which has char _
-	Checking out board[7][0], which has char _
+	Checking out board[7][0], which has char b
 
 PieceType: knight
 Possible Pieces:n
@@ -297,7 +363,7 @@ Considering direction (-2, 1) from (7, 2)
 Considering direction (-2, -1) from (7, 2)
 	Checking out board[5][1], which has char _
 Considering direction (-1, 2) from (7, 2)
-	Checking out board[6][4], which has char B
+	Checking out board[6][4], which has char _
 Considering direction (-1, -2) from (7, 2)
 	Checking out board[6][0], which has char _
 
@@ -323,7 +389,8 @@ Possible Pieces:q
 r
 k
 Considering direction (1, 0) from (5, 4)
-	Checking out board[6][4], which has char B
+	Checking out board[6][4], which has char _
+	Checking out board[7][4], which has char _
 Considering direction (-1, 0) from (5, 4)
 	Checking out board[4][4], which has char _
 	Checking out board[3][4], which has char _
@@ -384,8 +451,7 @@ Considering direction (-1, 0) from (6, 3)
 	Checking out board[4][3], which has char r
 Found a controlling piece: r
 Considering direction (0, 1) from (6, 3)
-	Checking out board[6][4], which has char B
-Pinned one!
+	Checking out board[6][4], which has char _
 	Checking out board[6][5], which has char _
 	Checking out board[6][6], which has char _
 	Checking out board[6][7], which has char _
@@ -433,26 +499,8 @@ _ _ R _ N _ _ _
 _ _ _ _ _ _ _ _ 
 _ _ _ r _ _ N _ 
 _ _ p _ _ _ _ _ 
-_ _ K _ B _ _ _ 
-_ _ _ _ _ _ _ _ 
-
-_ _ _ _ _ _ _ _ 
-_ _ _ _ _ _ _ _ 
-_ _ R _ N _ _ _ 
-_ _ _ _ _ _ _ _ 
-_ _ _ r _ _ N _ 
-_ _ p _ _ _ _ _ 
-_ _ _ _ B _ _ _ 
 _ _ _ _ K _ _ _ 
-
-_ _ _ _ _ _ _ _ 
-_ _ _ _ _ _ _ _ 
-_ _ R _ N _ _ _ 
-_ _ _ _ _ _ _ _ 
-_ _ _ r _ _ N _ 
-_ _ K _ _ _ _ _ 
-_ _ _ _ B _ _ _ 
-_ _ _ _ _ _ _ _ 
+b _ _ _ _ _ _ _ 
 
 _ _ _ _ _ _ _ _ 
 _ _ _ _ _ _ _ _ 
@@ -460,8 +508,26 @@ _ _ R _ N _ _ _
 _ _ _ _ _ _ _ _ 
 _ _ _ r _ _ N _ 
 _ _ p _ _ _ _ _ 
-_ _ _ _ B _ _ _ 
 _ _ K _ _ _ _ _ 
+b _ _ _ _ _ _ _ 
+
+_ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ 
+_ _ R _ N _ _ _ 
+_ _ _ _ _ _ _ _ 
+_ _ _ r _ _ N _ 
+_ _ p _ _ _ _ _ 
+_ _ _ _ _ _ _ _ 
+b _ _ _ K _ _ _ 
+
+_ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ 
+_ _ R _ N _ _ _ 
+_ _ _ _ _ _ _ _ 
+_ _ _ r _ _ N _ 
+_ _ p _ _ _ _ _ 
+_ _ _ _ _ _ _ _ 
+b _ K _ _ _ _ _ 
 
 _ _ _ _ _ _ _ _ 
 _ _ _ _ _ _ _ _ 
@@ -469,6 +535,6 @@ _ _ R _ N _ _ _
 _ _ _ _ _ _ _ _ 
 _ _ _ r _ _ N _ 
 _ _ p _ K _ _ _ 
-_ _ _ _ B _ _ _ 
 _ _ _ _ _ _ _ _ 
+b _ _ _ _ _ _ _ 
 
