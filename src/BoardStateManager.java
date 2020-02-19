@@ -10,7 +10,7 @@ public class BoardStateManager
 	// HashMap for a1 - h8 coords to numerical coordinates
 	//private HashMap<String, int[]> strToCoord;
 
-	private HashMap<String, ArrayList<int[]>> unitDirections;
+	public HashMap<String, ArrayList<int[]>> unitDirections;
 
 	// HashMap for numerical to a1-h8 coords
 	//private HashMap<int[], String> coordToStr;
@@ -63,6 +63,10 @@ public class BoardStateManager
 
 
 		//this.strToCoord = computeStrToNumCoord();
+	}
+
+	public HashMap<String, ArrayList<int[]>> getUnitDirections() {
+		return unitDirections;
 	}
 
 	public float computeScore(ArrayList<ArrayList<String>> board) 
@@ -135,20 +139,18 @@ public class BoardStateManager
     	}
     	return knightStates;
     }
-    
-
     // 1. Is King in check? (Do this by imagining King is all of the pieces and seeing if any opponent pieces are the first thing we hit.)
     // 2. First, compute valid moves for King (aka moves in which it's not checked)
     // 3. Are we double checked? If so, return list of king moves.
     // 4. If single checked, add options of eat, block to the original list of moves.
     // 5. For eating and blocking, make sure the piece isn't pinned. (Make sure that the piece we're considering moving is not the only piece
     // between the king and sliding piece.)
-    public ArrayList<Character[][]> computeKingStates(char[][] board, String color) {
-    	ArrayList<Character[][]> allStates = new ArrayList<>();
+    public ArrayList<char[][]> computeKingStates(char[][] board, String color) {
+    	ArrayList<char[][]> allStates = new ArrayList<>();
 
     	// Compute valid king states
     	// For each king move, make sure it won't be checked
-    	nextKingStateHelper(board, allStates);
+    	nextKingStateHelper(board, allStates, color);
 
     	// Is king checked?
     	// Also compute all the pins in computeCheckPositions. goFurther has to be true here
@@ -183,8 +185,46 @@ public class BoardStateManager
 
     	return allStates;
     }
-
     */
+
+    ArrayList<ArrayList<int[]>> computeCheckPositions(char[][] board, int[] kingPos, String color) {
+    	boolean findPins = true;
+    	String mode = "eating";
+    	ArrayList<ArrayList<int[]>> controlInfo = isControlled(board, kingPos, color, findPins, mode);
+    	return controlInfo;
+    }
+
+    public char[][] newKingStateGenerator(char[][] board, int[] oldPos, int[] newPos, String color) {
+		char[][] newState = new char[ChessAI.BOARD_SIZE][];
+		for (int i = 0; i < newState.length; i++) {
+			newState[i] = board[i].clone();
+		}
+		newState[newPos[0]][newPos[1]] = color.equals("black") ? 'K' : 'k';
+		newState[oldPos[0]][oldPos[1]] = '_';
+		return newState;
+    }
+
+    public void nextKingStateHelper(char[][] board, ArrayList<char[][]> states, int[] kingPos, String color) {
+    	// Check all grid directions and diagonal directions
+    	ArrayList<int[]> dirs = new ArrayList<>();
+    	dirs.addAll(unitDirections.get("grid"));
+    	dirs.addAll(unitDirections.get("diagonal"));
+    	for (int[] dir : dirs) {
+    		int[] pos = new int[]{kingPos[0] + dir[0], kingPos[1] + dir[1]};
+    		if (inBounds(pos)) {
+    			ArrayList<int[]> controlPos = isControlled(board, pos, color, false, "kingMove").get(0);
+    			if (controlPos.isEmpty()) {
+					states.add(newKingStateGenerator(board, kingPos, pos, color));
+    			}
+    		}
+    	}
+    }
+
+   	public boolean inBounds(int[] pos) {
+		if (pos[0] < 0 || pos[0] >= ChessAI.BOARD_SIZE || pos[1] < 0 || pos[1] >= ChessAI.BOARD_SIZE)
+			return false;
+		return true;
+   	}
 
     // Helper Method that determines if square is controlled by something 
     // NOTE: We find all the possible pieces that can control currPos of the OPPOSING COLOR
@@ -290,15 +330,19 @@ public class BoardStateManager
 					pos[0] += dir[0];
 					pos[1] += dir[1];
 
-					System.out.println("\tChecking out board[" + pos[0] + "][" + pos[1] + "], which has char " + board[pos[0]][pos[1]]);
-
 					// Board bounds
-					if (pos[0] < 0 || pos[0] >= ChessAI.BOARD_SIZE || pos[1] < 0 || pos[1] >= ChessAI.BOARD_SIZE) {
+					if (!inBounds(pos)) {
 						if (pinnedOne) 
 							pinList.remove(pinList.size()-1);
 						
 						break;
 					}
+
+					if (mode.equals("kingMove") && board[pos[0]][pos[1]] == (currColor.equals("white") ? 'k' : 'K')) {
+						continue;
+					}
+
+					System.out.println("\tChecking out board[" + pos[0] + "][" + pos[1] + "], which has char " + board[pos[0]][pos[1]]);
 
 					// If we hit our own piece first it can't be enemy desired piece so we either go further or stop trying this direction
 					if (findPins && ((currColor.equals("white") && Character.isLowerCase(board[pos[0]][pos[1]])) ||
