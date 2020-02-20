@@ -96,18 +96,11 @@ public class BoardStateManager
 
     // If a piece is eaten during a move, how do we account for it? if we had a board of strings it would be easier!!
     // in the hashmap of pieces to coords we need support for multiple Pawns, Knights, etc...can't support this w char!
-    public ArrayList<char[][]> computeKnightStates(char[][] board, int[] knightPos, String currColor) {
+    public ArrayList<char[][]> computeKnightStates(char[][] board, char piece, int[] knightPos, String currColor) {
     	ArrayList<char[][]> knightStates = new ArrayList<>();
     	int[] newKnightPos = new int[]{knightPos[0], knightPos[1]};
-    	char updatingPiece;
+    	char updatingPiece = piece;
 
-    	if(currColor.equals("white")) {
-    		updatingPiece = 'k';
-    	}
-    	else{
-    		updatingPiece = 'K';
-    	
-    	}
     	ArrayList<int[]> knightDir = unitDirections.get("knight");
     	for(int i = 0; i < knightDir.size(); i++) {
     		newKnightPos[0] += knightDir.get(i)[0];
@@ -115,51 +108,173 @@ public class BoardStateManager
     	
     		if (inBounds(newKnightPos)) {
 	    		knightStates.add(newStateGenerator(board, knightPos, newKnightPos, updatingPiece));
-	    		}
+	    	}
 	   
 	    }
     	
     	return knightStates;
     }
 
-    public ArrayList<char[][]> computeRookStates(char[][] board, int[] rookPos, String currColor) {
-		ArrayList<char[][]> rookStates = new ArrayList<>();
-    	int[] newRookPos = new int[]{rookPos[0], rookPos[1]};
-    	char updatingPiece;
+    public ArrayList<char[][]> computePawnStates(char[][] board, int[] pawnPos, String currColor) {
+    	ArrayList<char[][]> pawnStates = new ArrayList<>();
+    	int[] newPawnPos = new int[]{pawnPos[0], pawnPos[1]};
+    	ArrayList<int[]> pawnMoves = new ArrayList<>();
+    	char piece;
 
     	if(currColor.equals("white")) {
-    		updatingPiece = 'r';
+    		piece = 'p';
+    		//down
+    		newPawnPos[0] = pawnPos[0] + 1;
+    		newPawnPos[1] = pawnPos[1];
+    		if (inBounds(newPawnPos)) {
+	    		if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
+	    			pawnMoves.add(newPawnPos);
+
+	    		}
+	    	}
+    		//down left
+    		newPawnPos[0] = pawnPos[0] + 1;
+    		newPawnPos[1] = pawnPos[1] - 1;
+    		if (inBounds(newPawnPos)) {
+	    		if(Character.isLowerCase(board[newPawnPos[0]][newPawnPos[1]]))
+				{
+	    			pawnMoves.add(newPawnPos);
+	    		}
+    		}
+    		//down right
+    		newPawnPos[0] = pawnPos[0] + 1;
+    		newPawnPos[1] = pawnPos[1] + 1;
+    		if (inBounds(newPawnPos)) {
+	    		if(Character.isLowerCase(board[newPawnPos[0]][newPawnPos[1]]))
+				{
+	    			pawnMoves.add(newPawnPos);
+	    		}
+    		}
+    		if(pawnPos[0] == 1) {
+    			newPawnPos[0] = pawnPos[0] + 2;
+    			newPawnPos[1] = pawnPos[1];
+    			if (inBounds(newPawnPos)) {
+	    			if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
+	    				pawnMoves.add(newPawnPos);
+
+	    			}
+	    		}
+    		}
+
+
+    	}else {
+    		piece = 'P';
+    		//up
+    		newPawnPos[0] = pawnPos[0] - 1;
+    		newPawnPos[1] = pawnPos[1];
+    		if (inBounds(newPawnPos)) {
+	    		if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
+	    			pawnMoves.add(newPawnPos);
+
+	    		}
+    		}
+    		//up left
+    		newPawnPos[0] = pawnPos[0] - 1;
+    		newPawnPos[1] = pawnPos[1] - 1;
+    		if (inBounds(newPawnPos)) {
+	    		if(Character.isUpperCase(board[newPawnPos[0]][newPawnPos[1]])) {
+	    			pawnMoves.add(newPawnPos);
+	    		}
+    		}
+    		//up right
+    		newPawnPos[0] = pawnPos[0] - 1;
+    		newPawnPos[1] = pawnPos[1] + 1;
+    		if (inBounds(newPawnPos)) {
+	    		if(Character.isUpperCase(board[newPawnPos[0]][newPawnPos[1]])) {
+	    			pawnMoves.add(newPawnPos);
+	    		}
+    		}
+    		if(pawnPos[0] == 6) {
+    			newPawnPos[0] = pawnPos[0] - 2;
+    			newPawnPos[1] = pawnPos[1];
+    			if (inBounds(newPawnPos)) {
+	    			if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
+	    				pawnMoves.add(newPawnPos);
+
+	    			}
+    			}
+    		}
     	}
-    	else{
-    		updatingPiece = 'R';
+    	int[] move;
+    	for(int i = 0; i < pawnMoves.size(); i++) {
+    		move = pawnMoves.get(i);
+			pawnStates.add(newStateGenerator(board, pawnPos, move, piece));
+			    		
+		}
+		return pawnStates;
+
+
+    }
+
+    // compute all sliding piece states
+    public ArrayList<char[][]> computeSlidingStates(char[][] board, int[] currPos, char piece, String currColor) {
+    	ArrayList<char[][]> newStates = new ArrayList<>();
+    	String[] dir = new String[2];
+    	int[] newPos = new int[]{currPos[0], currPos[1]};
+    	if(Character.toLowerCase(piece) == 'r') {
+    		dir[0] = "grid";
+    	}else if(Character.toLowerCase(piece) == 'b') {
+    		dir[0] = "diagonal";
+    	}else if(Character.toLowerCase(piece) == 'q') {
+    		dir[0] = "grid";
+    		dir[1] = "diagonal";
+    	}
+
     	
+    	for(int i = 0; i < dir.length; i++) {
+    		if(dir[i] == null) break;
+    		System.out.println("HERE");
+    		System.out.println(dir[0]);
+    		System.out.println(piece);
+    		computeSlidingStatesHelper(newStates, board, currPos, newPos, currColor, dir[i], piece);
+    	 	
     	}
-    	ArrayList<int[]> rookDir = unitDirections.get("grid");
-    	for(int i = 0; i < rookDir.size(); i++) {
+    	return newStates;	
+
+    }
+
+    public void computeSlidingStatesHelper(ArrayList<char[][]> newStates, char [][] board, int[] oldPos, int[] newPos, String currColor, String dir, char piece)
+    {
+    	System.out.println("Curr position: ("+oldPos[0]+" ,"+oldPos[1]+")");
+    	System.out.println("New position: ("+newPos[0]+" ,"+newPos[1]+")");
+    	System.out.println(currColor);
+    	System.out.println(dir);
+    	System.out.println(piece);
+    	
+    	ArrayList<int[]> dirList = unitDirections.get(dir);
+    	for(int i = 0; i < dirList.size(); i++) {
+    		newPos[0] = oldPos[0];
+    		newPos[1] = oldPos[1];
     		while(true){
-	    		newRookPos[0] += rookDir.get(i)[0];
-	    		newRookPos[1] += rookDir.get(i)[1];
+	    		newPos[0] += dirList.get(i)[0];
+	    		newPos[1] += dirList.get(i)[1];
 	    	
-	    		if (inBounds(newRookPos)) {
-		    		if((currColor.equals("white") && Character.isLowerCase(board[newRookPos[0]][newRookPos[1]])) || (currColor.equals("black") && Character.isUpperCase(board[newRookPos[0]][newRookPos[1]])))
+	    		if (inBounds(newPos)) {
+	    			// checks if piece from same team is at new pos
+		    		if((currColor.equals("white") && Character.isLowerCase(board[newPos[0]][newPos[1]])) || (currColor.equals("black") && Character.isUpperCase(board[newPos[0]][newPos[1]])))
 		    		{
 		    			break;
-		    		}else if((currColor.equals("white") && Character.isUpperCase(board[newRookPos[0]][newRookPos[1]])) || currColor.equals("black") && Character.isLowerCase(board[newRookPos[0]][newRookPos[1]])) {
-		    			rookStates.add(newStateGenerator(board, rookPos, newRookPos, updatingPiece));
+		    		// checks if piece from enemy color is at new pos 
+		    		}else if((currColor.equals("white") && Character.isUpperCase(board[newPos[0]][newPos[1]])) || currColor.equals("black") && Character.isLowerCase(board[newPos[0]][newPos[1]])) {
+		    			newStates.add(newStateGenerator(board, oldPos, newPos, piece));
 		    			break;
 		    		}
 		    		else{
-		    			rookStates.add(newStateGenerator(board, rookPos, newRookPos, updatingPiece));
+		    			newStates.add(newStateGenerator(board, oldPos, newPos, piece));
 		    		}
 
+		    	} else{
+		    		break;
 		    	}
-		    	break;
+		    	//break;
 	    	}
 	   
 	    }
-    	
-    	return rookStates;
-
     }
   
     // 1. Is King in check? (Do this by imagining King is all of the pieces and seeing if any opponent pieces are the first thing we hit.)
