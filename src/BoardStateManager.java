@@ -7,7 +7,7 @@ import java.lang.Character;
 
 public class BoardStateManager
 {	// HashMap storing value of pieces
-	private HashMap<Character, Float> pieceVal;
+	public static HashMap<Character, Float> pieceVal;
 	// HashMap for a1 - h8 coords to numerical coordinates
 	//private HashMap<String, int[]> strToCoord;
 
@@ -94,10 +94,9 @@ public class BoardStateManager
         }
     }
 
-	/*
     // If a piece is eaten during a move, how do we account for it? if we had a board of strings it would be easier!!
     // in the hashmap of pieces to coords we need support for multiple Pawns, Knights, etc...can't support this w char!
-    public ArrayList<Character[][]> computeKnightStates(char[][] board, String currColor) {
+    public ArrayList<char[][]> computeKnightStates(char[][] board, int[] knightPos, String color) {
     	int[] knight1;
     	int[] knight2; 
     	ArrayList<Character[][]> knightStates = new ArrayList<>();
@@ -140,7 +139,6 @@ public class BoardStateManager
     	}
     	return knightStates;
     }
-    */
 
     // 1. Is King in check? (Do this by imagining King is all of the pieces and seeing if any opponent pieces are the first thing we hit.)
     // 2. First, compute valid moves for King (aka moves in which it's not checked)
