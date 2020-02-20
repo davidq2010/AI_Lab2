@@ -1,6 +1,7 @@
 import java.lang.Character;
+import java.lang.Comparable;
 
-public class State {
+public class State implements Comparable<State> {
 	private char[][] board;
 	int score;
 	boolean kingChecked;
@@ -11,6 +12,10 @@ public class State {
 		this.score = score;
 		this.kingChecked = kingChecked;
 		this.color = colorOfStateMover;
+	}
+
+	public int compareTo(State other) {
+		return this.score - other.score;
 	}
 
 	public void setBoard(char[][] board) {
