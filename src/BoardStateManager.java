@@ -94,53 +94,75 @@ public class BoardStateManager
         }
     }
 
-	/*
+	
     // If a piece is eaten during a move, how do we account for it? if we had a board of strings it would be easier!!
     // in the hashmap of pieces to coords we need support for multiple Pawns, Knights, etc...can't support this w char!
-    public ArrayList<Character[][]> computeKnightStates(char[][] board, String currColor) {
-    	int[] knight1;
-    	int[] knight2; 
-    	ArrayList<Character[][]> knightStates = new ArrayList<>();
-    	char[][] succState1 = board;
-    	char[][] succState2 = board;
+    public ArrayList<char[][]> computeKnightStates(char[][] board, int[] knightPos, String currColor) {
+    	ArrayList<char[][]> knightStates = new ArrayList<>();
+    	int[] newKnightPos = new int[]{knightPos[0], knightPos[1]};
     	char updatingPiece;
 
     	if(currColor.equals("white")) {
-    		knight1 = allPiecePos.get("K1");
-    		knight2 = allPiecePos.get("K2");
-    		updatingPiece = 'K';
-    	}
-    	else{
-    		knight1 = allPiecePos.get("k1");
-    		knight2 = allPiecePos.get("k2");
     		updatingPiece = 'k';
     	}
-    	ArrayList<int[]> knightDir = unitDirections.get("knight")
-    	int knightOffsetX;
-    	int knightOffsetY;
-    
-    	for(i = 0; i < knightDir.size(); i++) {
-	    		//first knight
-    		knightOffsetX = knightDir.get(i)[0];
-    		knightOffsetY = knightDir.get(i)[1];
+    	else{
+    		updatingPiece = 'K';
     	
-    		if (knight1[0] * knightOffsetX < 0 || knight1[0] * knightOffsetX >= ChessAI.BOARD_SIZE || knight1[1] * knightOffsetY < 0 || knight1[1] * knightOffsetY >= ChessAI.BOARD_SIZE) {
-	    		char[][] succState1 = board;
-	    		succState1[knight1[0]][knight1[1]] = '_';
-	    		succState1[knight1[0] * ][knight1[1] * ] = updatingPiece;
-	    		knightStates.add(succState1);
-	    		}
-	    		// second knight
-	    	if (knight2[0] * knightOffsetX < 0 || knight2[0] * knightOffsetX >= ChessAI.BOARD_SIZE || knight2[1] * knightOffsetY < 0 || knight2[1] * knightOffsetY >= ChessAI.BOARD_SIZE) {
-	    		char[][] succState2 = board;
-	    		succState2[knight2[0]][knight2[1]] = '_';
-	    		succState2[knight2[0] * knightDir.get(i)[0]][knight2[1] * knightDir.get(i)[1]] = updatingPiece;
-	    		knightStates.add(succState2);
-	    	}
     	}
+    	ArrayList<int[]> knightDir = unitDirections.get("knight");
+    	for(int i = 0; i < knightDir.size(); i++) {
+    		newKnightPos[0] += knightDir.get(i)[0];
+    		newKnightPos[1] += knightDir.get(i)[1];
+    	
+    		if (inBounds(newKnightPos)) {
+	    		knightStates.add(newStateGenerator(board, knightPos, newKnightPos, updatingPiece));
+	    		}
+	   
+	    }
+    	
     	return knightStates;
     }
-    */
+
+    public ArrayList<char[][]> computeRookStates(char[][] board, int[] rookPos, String currColor) {
+		ArrayList<char[][]> rookStates = new ArrayList<>();
+    	int[] newRookPos = new int[]{rookPos[0], rookPos[1]};
+    	char updatingPiece;
+
+    	if(currColor.equals("white")) {
+    		updatingPiece = 'r';
+    	}
+    	else{
+    		updatingPiece = 'R';
+    	
+    	}
+    	ArrayList<int[]> rookDir = unitDirections.get("grid");
+    	for(int i = 0; i < rookDir.size(); i++) {
+    		while(true){
+	    		newRookPos[0] += rookDir.get(i)[0];
+	    		newRookPos[1] += rookDir.get(i)[1];
+	    	
+	    		if (inBounds(newRookPos)) {
+		    		if((currColor.equals("white") && Character.isLowerCase(board[newRookPos[0]][newRookPos[1]])) || (currColor.equals("black") && Character.isUpperCase(board[newRookPos[0]][newRookPos[1]])))
+		    		{
+		    			break;
+		    		}else if((currColor.equals("white") && Character.isUpperCase(board[newRookPos[0]][newRookPos[1]])) || currColor.equals("black") && Character.isLowerCase(board[newRookPos[0]][newRookPos[1]])) {
+		    			rookStates.add(newStateGenerator(board, rookPos, newRookPos, updatingPiece));
+		    			break;
+		    		}
+		    		else{
+		    			rookStates.add(newStateGenerator(board, rookPos, newRookPos, updatingPiece));
+		    		}
+
+		    	}
+		    	break;
+	    	}
+	   
+	    }
+    	
+    	return rookStates;
+
+    }
+  
 
     // 1. Is King in check? (Do this by imagining King is all of the pieces and seeing if any opponent pieces are the first thing we hit.)
     // 2. First, compute valid moves for King (aka moves in which it's not checked)
