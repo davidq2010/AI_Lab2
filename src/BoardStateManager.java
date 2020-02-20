@@ -103,11 +103,16 @@ public class BoardStateManager
 
     	ArrayList<int[]> knightDir = unitDirections.get("knight");
     	for(int i = 0; i < knightDir.size(); i++) {
-    		newKnightPos[0] += knightDir.get(i)[0];
-    		newKnightPos[1] += knightDir.get(i)[1];
+    		newKnightPos[0] = knightPos[0] + knightDir.get(i)[0];
+    		newKnightPos[1] = knightPos[1] + knightDir.get(i)[1];
     	
     		if (inBounds(newKnightPos)) {
-	    		knightStates.add(newStateGenerator(board, knightPos, newKnightPos, updatingPiece));
+    			if((currColor.equals("white") && Character.isLowerCase(board[newKnightPos[0]][newKnightPos[1]])) || (currColor.equals("black") && Character.isUpperCase(board[newKnightPos[0]][newKnightPos[1]])))
+		    		{
+		    			continue;
+		    		}else{
+	    				knightStates.add(newStateGenerator(board, knightPos, newKnightPos, updatingPiece));
+	    			}
 	    	}
 	   
 	    }
@@ -120,7 +125,7 @@ public class BoardStateManager
     	int[] newPawnPos = new int[]{pawnPos[0], pawnPos[1]};
     	ArrayList<int[]> pawnMoves = new ArrayList<>();
     	char piece;
-
+    	System.out.println("______________________________");
     	if(currColor.equals("white")) {
     		piece = 'p';
     		//down
@@ -128,7 +133,8 @@ public class BoardStateManager
     		newPawnPos[1] = pawnPos[1];
     		if (inBounds(newPawnPos)) {
 	    		if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
-	    			pawnMoves.add(newPawnPos);
+	    			System.out.println(newPawnPos[0]);
+	    			pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
 
 	    		}
 	    	}
@@ -136,28 +142,33 @@ public class BoardStateManager
     		newPawnPos[0] = pawnPos[0] + 1;
     		newPawnPos[1] = pawnPos[1] - 1;
     		if (inBounds(newPawnPos)) {
-	    		if(Character.isLowerCase(board[newPawnPos[0]][newPawnPos[1]]))
+	    		if(Character.isUpperCase(board[newPawnPos[0]][newPawnPos[1]]))
 				{
-	    			pawnMoves.add(newPawnPos);
+	    			pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
 	    		}
     		}
     		//down right
     		newPawnPos[0] = pawnPos[0] + 1;
     		newPawnPos[1] = pawnPos[1] + 1;
     		if (inBounds(newPawnPos)) {
-	    		if(Character.isLowerCase(board[newPawnPos[0]][newPawnPos[1]]))
+	    		if(Character.isUpperCase(board[newPawnPos[0]][newPawnPos[1]]))
 				{
-	    			pawnMoves.add(newPawnPos);
+	    			pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
 	    		}
     		}
     		if(pawnPos[0] == 1) {
-    			newPawnPos[0] = pawnPos[0] + 2;
+    			newPawnPos[0] = pawnPos[0] + 1;
     			newPawnPos[1] = pawnPos[1];
-    			if (inBounds(newPawnPos)) {
-	    			if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
-	    				pawnMoves.add(newPawnPos);
+    			if(board[newPawnPos[0]][newPawnPos[1]] == '_'){
+    				newPawnPos[0] += 1;
 
-	    			}
+	    			
+		    			if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
+		    				System.out.println(newPawnPos[0]);
+		    			pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
+
+		    			}
+		    		
 	    		}
     		}
 
@@ -169,7 +180,7 @@ public class BoardStateManager
     		newPawnPos[1] = pawnPos[1];
     		if (inBounds(newPawnPos)) {
 	    		if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
-	    			pawnMoves.add(newPawnPos);
+	    			pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
 
 	    		}
     		}
@@ -177,32 +188,38 @@ public class BoardStateManager
     		newPawnPos[0] = pawnPos[0] - 1;
     		newPawnPos[1] = pawnPos[1] - 1;
     		if (inBounds(newPawnPos)) {
-	    		if(Character.isUpperCase(board[newPawnPos[0]][newPawnPos[1]])) {
-	    			pawnMoves.add(newPawnPos);
+	    		if(Character.isLowerCase(board[newPawnPos[0]][newPawnPos[1]])) {
+	    			pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
 	    		}
     		}
     		//up right
     		newPawnPos[0] = pawnPos[0] - 1;
     		newPawnPos[1] = pawnPos[1] + 1;
     		if (inBounds(newPawnPos)) {
-	    		if(Character.isUpperCase(board[newPawnPos[0]][newPawnPos[1]])) {
-	    			pawnMoves.add(newPawnPos);
+	    		if(Character.isLowerCase(board[newPawnPos[0]][newPawnPos[1]])) {
+	    			pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
 	    		}
     		}
     		if(pawnPos[0] == 6) {
-    			newPawnPos[0] = pawnPos[0] - 2;
+    			newPawnPos[0] = pawnPos[0] - 1;
     			newPawnPos[1] = pawnPos[1];
-    			if (inBounds(newPawnPos)) {
-	    			if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
-	    				pawnMoves.add(newPawnPos);
+    			if(board[newPawnPos[0]][newPawnPos[1]] == '_'){
+    				newPawnPos[0] -= 1;
+	    			
+		    			if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
+		    				pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
 
-	    			}
+		    			}
     			}
     		}
     	}
     	int[] move;
     	for(int i = 0; i < pawnMoves.size(); i++) {
     		move = pawnMoves.get(i);
+    		System.out.println("====================");
+    		System.out.println(move[0]);
+    		System.out.println(move[1]);
+
 			pawnStates.add(newStateGenerator(board, pawnPos, move, piece));
 			    		
 		}

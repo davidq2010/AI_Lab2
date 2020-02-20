@@ -27,19 +27,33 @@ public class TestNonKingPieceMoves {
 			System.out.println();
 		}
 	}
-/*
-	public static void testPawn(BoardStateManager bm, char[][] board) {
 
+	public static void testPawn(BoardStateManager bm, char[][] board) {
+		String currColor = "black";
+		char piece = 'P';
+		int[] pos = findPiece(board, piece);
+		ArrayList<char[][]> states = bm.computePawnStates(board, pos, currColor);
+		for (char[][] state : states) {
+			ChessAI.printBoard(state);
+			System.out.println();
+		}
 
 
 	}
 
 	public static void testKnight(BoardStateManager bm, char[][] board) {
-
+		String currColor = "white";
+		char piece = 'n';
+		int[] pos = findPiece(board, piece);
+		ArrayList<char[][]> states = bm.computeKnightStates(board, piece, pos, currColor);
+		for (char[][] state : states) {
+			ChessAI.printBoard(state);
+			System.out.println();
+		}
 
 
 	}
-*/
+
 public static void main(String[] args) throws IOException {
 		if (args.length != 1) {
             System.out.println("Usage: java Chess <inputFile>");
@@ -56,7 +70,8 @@ public static void main(String[] args) throws IOException {
 		//testKingMoveGen(bm, board);
 		//testKingStateHelper(bm, board);
 		//testTheWholeShebang(bm, board);
-		testSlidingPiece(bm, board);
+		//testSlidingPiece(bm, board);
+		testPawn(bm, board);
 	}
 
 }
