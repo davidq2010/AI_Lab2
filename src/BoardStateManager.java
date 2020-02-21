@@ -8,7 +8,7 @@ import java.util.Collections;
 
 public class BoardStateManager
 {  
-    private int numStates = 0;
+    public int numStates = 0;
 
      // HashMap storing value of pieces
     public static HashMap<Character, Integer> pieceVal = new HashMap<Character, Integer>() {{
@@ -19,8 +19,6 @@ public class BoardStateManager
         put('p', 1);
         put('_', 0);
     }};;
-    // HashMap for a1 - h8 coords to numerical coordinates
-    //private HashMap<String, int[]> strToCoord;
 
     public HashMap<String, ArrayList<int[]>> unitDirections;
 
@@ -52,9 +50,6 @@ public class BoardStateManager
         knight.add(new int[]{-1, 2});
         knight.add(new int[]{-1, -2});
         unitDirections.put("knight", knight);
-
-
-        //this.strToCoord = computeStrToNumCoord();
     }
 
     public HashMap<String, ArrayList<int[]>> getUnitDirections() {
@@ -76,22 +71,8 @@ public class BoardStateManager
         return score;
     }
 
-    public void printBoard(char[][] board) {
-        for (int i = 0; i < ChessAI.BOARD_SIZE; i++) {
-            for (int j = 0; j < ChessAI.BOARD_SIZE; j++) {
-                System.out.print(board[i][j] + " ");
-            }
-            //System.out.println();
-        }
-    }
-
     public ImTiredClass negamax(State state, int depth, int alpha, int beta, int color) {
         String currColor = (color == 1) ? "white" : "black";
-
-        System.out.println("CURRCOLOR: " + currColor);
-        System.out.println("Curr State: "); 
-        System.out.println("DEPTH: " + depth);
-        ChessAI.printBoard(state.getBoard());
 
         ArrayList<int[]> checkList = new ArrayList<>();
 
@@ -103,19 +84,19 @@ public class BoardStateManager
             return toReturn;
         }
         if (successors.isEmpty() && !checkList.isEmpty()) {// Change this
-            System.out.println("HEY BITTTTCHHHHHHHHHH");
             ImTiredClass toReturn = new ImTiredClass(state, -10000000);
             return toReturn;
         } else if(successors.isEmpty() && checkList.isEmpty()) {
             ImTiredClass toReturn = new ImTiredClass(state, 0);
         }
         
-  // TODO write a method to encapsulate all state generation
         
-  // GenerateStates accesses computeAllStates
+      // GenerateStates accesses computeAllStates
 
-  // TODO write method to reorder states based on some policy
-        Collections.sort(successors);
+        // Visit the successors that are worse for opponent first
+        //Collections.sort(successors);
+        Collections.sort(successors, Collections.reverseOrder());
+        //Collections.shuffle(successors);
         int value = Integer.MAX_VALUE * -1; 
         int idxOfBestState = 0;
         ImTiredClass weTired;
@@ -125,10 +106,6 @@ public class BoardStateManager
             if (value2 > value) {
                 value = value2;
                 idxOfBestState = i;
-                System.out.println("Updated best state info: "); 
-                System.out.println("COLOR: " + currColor);
-                ChessAI.printBoard(successors.get(i).getBoard());
-                System.out.println();
             }
             alpha = (int) Math.max(alpha, value);
             if(alpha >= beta) {
@@ -147,15 +124,13 @@ public class BoardStateManager
         ArrayList<ArrayList<int[]>> checkAndPinPositions = computeCheckAndPinPositions(state.getBoard(), 
             color.equals("black") ? state.blackKingPos : state.whiteKingPos, color);
 
-        // If checked, return now;
         ArrayList<int[]> pinList = checkAndPinPositions.get(1);
         checkList.addAll(checkAndPinPositions.get(0));
-        if (!checkList.isEmpty())
-            System.out.println("CHECK POS: " + checkList.get(0)[0] + ", " + checkList.get(0)[1]);
 
         ArrayList<State> allState = computeKingStates(state,
             color.equals("black") ? state.blackKingPos : state.whiteKingPos, color, pinList, checkList);
 
+        // If checked, return now;
         if (!checkList.isEmpty()) {
             return allState;
         }
@@ -167,236 +142,234 @@ public class BoardStateManager
                 char piece = state.getBoard()[i][j];
                 // We only generate moves for the current color's pieces!
                 if ((color.equals("black") && Character.isLowerCase(piece)) || 
-                    color.equals("white") && Character.isUpperCase(piece)) {
-                    continue;
-            }
+                    color.equals("white") && Character.isUpperCase(piece)) { continue; }
 
-            for (int[] pinner : pinList) {
-                if (Arrays.equals(piecePos, pinner)) {
-                    continue searchLoop; 
+                    for (int[] pinner : pinList) {
+                        if (Arrays.equals(piecePos, pinner)) {
+                            continue searchLoop; 
+                        }
+                    }
+
+                    ArrayList<State> states = new ArrayList<>();
+                    if (Character.toLowerCase(piece) == 'p') {
+                        states = computePawnStates(state, piecePos,
+                            Character.isLowerCase(piece) ? "white" : "black");
+                    }
+                    else if (Character.toLowerCase(piece) == 'n') {
+                        states = computeKnightStates(state, piece, piecePos, 
+                            Character.isLowerCase(piece) ? "white" : "black");
+                    }
+                    else if (Character.toLowerCase(piece) == 'b' || Character.toLowerCase(piece) == 'r' ||
+                        Character.toLowerCase(piece) == 'q') {
+                        states = computeSlidingStates(state, piecePos, piece,
+                            Character.isLowerCase(piece) ? "white" : "black");
                 }
+                allState.addAll(states);
             }
-
-            ArrayList<State> states = new ArrayList<>();
-            if (Character.toLowerCase(piece) == 'p') {
-                states = computePawnStates(state, piecePos,
-                    Character.isLowerCase(piece) ? "white" : "black");
-            }
-            else if (Character.toLowerCase(piece) == 'n') {
-                states = computeKnightStates(state, piece, piecePos, 
-                    Character.isLowerCase(piece) ? "white" : "black");
-            }
-            else if (Character.toLowerCase(piece) == 'b' || Character.toLowerCase(piece) == 'r' ||
-                Character.toLowerCase(piece) == 'q') {
-                states = computeSlidingStates(state, piecePos, piece,
-                    Character.isLowerCase(piece) ? "white" : "black");
         }
-        allState.addAll(states);
-    }
-}
 
-return allState;
-}
+        return allState;
+    }
 
     // If a piece is eaten during a move, how do we account for it? if we had a board of strings it would be easier!!
     // in the hashmap of pieces to coords we need support for multiple Pawns, Knights, etc...can't support this w char!
-public ArrayList<State> computeKnightStates(State originalState, char piece, int[] knightPos, String currColor) {
-    ArrayList<State> knightStates = new ArrayList<>();
-    int[] newKnightPos = new int[]{knightPos[0], knightPos[1]};
-    char updatingPiece = piece;
+    public ArrayList<State> computeKnightStates(State originalState, char piece, int[] knightPos, String currColor) {
+        ArrayList<State> knightStates = new ArrayList<>();
+        int[] newKnightPos = new int[]{knightPos[0], knightPos[1]};
+        char updatingPiece = piece;
 
-    char[][] board = originalState.getBoard();
+        char[][] board = originalState.getBoard();
 
-    ArrayList<int[]> knightDir = unitDirections.get("knight");
-    for(int i = 0; i < knightDir.size(); i++) {
-        newKnightPos[0] = knightPos[0] + knightDir.get(i)[0];
-        newKnightPos[1] = knightPos[1] + knightDir.get(i)[1];
-        
-        if (inBounds(newKnightPos)) {
-            if((currColor.equals("white") && Character.isLowerCase(board[newKnightPos[0]][newKnightPos[1]])) || (currColor.equals("black") && Character.isUpperCase(board[newKnightPos[0]][newKnightPos[1]])))
-            {
-                continue;
-            }else{
-                knightStates.add(newStateGenerator(originalState, knightPos, newKnightPos, updatingPiece));
+        ArrayList<int[]> knightDir = unitDirections.get("knight");
+        for(int i = 0; i < knightDir.size(); i++) {
+            newKnightPos[0] = knightPos[0] + knightDir.get(i)[0];
+            newKnightPos[1] = knightPos[1] + knightDir.get(i)[1];
+
+            if (inBounds(newKnightPos)) {
+                if((currColor.equals("white") && Character.isLowerCase(board[newKnightPos[0]][newKnightPos[1]])) || (currColor.equals("black") && Character.isUpperCase(board[newKnightPos[0]][newKnightPos[1]])))
+                {
+                    continue;
+                }else{
+                    knightStates.add(newStateGenerator(originalState, knightPos, newKnightPos, updatingPiece));
+                }
             }
         }
+        return knightStates;
     }
-    return knightStates;
-}
 
-public ArrayList<State> computePawnStates(State originalState, int[] pawnPos, String currColor) {
-    char[][] board = originalState.getBoard();
-    ArrayList<State> pawnStates = new ArrayList<>();
-    int[] newPawnPos = new int[]{pawnPos[0], pawnPos[1]};
-    ArrayList<int[]> pawnMoves = new ArrayList<>();
-    char piece;
-    //System.out.println("______________________________");
-    if(currColor.equals("white")) {
-        piece = 'p';
+    public ArrayList<State> computePawnStates(State originalState, int[] pawnPos, String currColor) {
+        char[][] board = originalState.getBoard();
+        ArrayList<State> pawnStates = new ArrayList<>();
+        int[] newPawnPos = new int[]{pawnPos[0], pawnPos[1]};
+        ArrayList<int[]> pawnMoves = new ArrayList<>();
+        char piece;
+
+        if(currColor.equals("white")) {
+            piece = 'p';
             //down
-        newPawnPos[0] = pawnPos[0] + 1;
-        newPawnPos[1] = pawnPos[1];
-        if (inBounds(newPawnPos)) {
-            if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
-                //System.out.println(newPawnPos[0]);
-                pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
-
-            }
-        }
-            //down left
-        newPawnPos[0] = pawnPos[0] + 1;
-        newPawnPos[1] = pawnPos[1] - 1;
-        if (inBounds(newPawnPos)) {
-            if(Character.isUpperCase(board[newPawnPos[0]][newPawnPos[1]]))
-            {
-                pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
-            }
-        }
-            //down right
-        newPawnPos[0] = pawnPos[0] + 1;
-        newPawnPos[1] = pawnPos[1] + 1;
-        if (inBounds(newPawnPos)) {
-            if(Character.isUpperCase(board[newPawnPos[0]][newPawnPos[1]]))
-            {
-                pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
-            }
-        }
-        if(pawnPos[0] == 1) {
             newPawnPos[0] = pawnPos[0] + 1;
             newPawnPos[1] = pawnPos[1];
-            if(board[newPawnPos[0]][newPawnPos[1]] == '_'){
-                newPawnPos[0] += 1;
-
-
+            if (inBounds(newPawnPos)) {
                 if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
-                    //System.out.println(newPawnPos[0]);
+                //System.out.println(newPawnPos[0]);
                     pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
 
                 }
-
             }
-        }
+            //down left
+            newPawnPos[0] = pawnPos[0] + 1;
+            newPawnPos[1] = pawnPos[1] - 1;
+            if (inBounds(newPawnPos)) {
+                if(Character.isUpperCase(board[newPawnPos[0]][newPawnPos[1]]))
+                {
+                    pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
+                }
+            }
+            //down right
+            newPawnPos[0] = pawnPos[0] + 1;
+            newPawnPos[1] = pawnPos[1] + 1;
+            if (inBounds(newPawnPos)) {
+                if(Character.isUpperCase(board[newPawnPos[0]][newPawnPos[1]]))
+                {
+                    pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
+                }
+            }
+            if(pawnPos[0] == 1) {
+                newPawnPos[0] = pawnPos[0] + 1;
+                newPawnPos[1] = pawnPos[1];
+                if(board[newPawnPos[0]][newPawnPos[1]] == '_'){
+                    newPawnPos[0] += 1;
 
 
-    }else {
-        piece = 'P';
+                    if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
+                    //System.out.println(newPawnPos[0]);
+                        pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
+
+                    }
+
+                }
+            }
+
+
+        }else {
+            piece = 'P';
             //up
-        newPawnPos[0] = pawnPos[0] - 1;
-        newPawnPos[1] = pawnPos[1];
-        if (inBounds(newPawnPos)) {
-            if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
-                pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
-
-            }
-        }
-            //up left
-        newPawnPos[0] = pawnPos[0] - 1;
-        newPawnPos[1] = pawnPos[1] - 1;
-        if (inBounds(newPawnPos)) {
-            if(Character.isLowerCase(board[newPawnPos[0]][newPawnPos[1]])) {
-                pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
-            }
-        }
-            //up right
-        newPawnPos[0] = pawnPos[0] - 1;
-        newPawnPos[1] = pawnPos[1] + 1;
-        if (inBounds(newPawnPos)) {
-            if(Character.isLowerCase(board[newPawnPos[0]][newPawnPos[1]])) {
-                pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
-            }
-        }
-        if(pawnPos[0] == 6) {
             newPawnPos[0] = pawnPos[0] - 1;
             newPawnPos[1] = pawnPos[1];
-            if(board[newPawnPos[0]][newPawnPos[1]] == '_'){
-                newPawnPos[0] -= 1;
-
+            if (inBounds(newPawnPos)) {
                 if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
                     pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
 
                 }
             }
+            //up left
+            newPawnPos[0] = pawnPos[0] - 1;
+            newPawnPos[1] = pawnPos[1] - 1;
+            if (inBounds(newPawnPos)) {
+                if(Character.isLowerCase(board[newPawnPos[0]][newPawnPos[1]])) {
+                    pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
+                }
+            }
+            //up right
+            newPawnPos[0] = pawnPos[0] - 1;
+            newPawnPos[1] = pawnPos[1] + 1;
+            if (inBounds(newPawnPos)) {
+                if(Character.isLowerCase(board[newPawnPos[0]][newPawnPos[1]])) {
+                    pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
+                }
+            }
+            if(pawnPos[0] == 6) {
+                newPawnPos[0] = pawnPos[0] - 1;
+                newPawnPos[1] = pawnPos[1];
+                if(board[newPawnPos[0]][newPawnPos[1]] == '_'){
+                    newPawnPos[0] -= 1;
+
+                    if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
+                        pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
+
+                    }
+                }
+            }
         }
-    }
-    int[] move;
-    for(int i = 0; i < pawnMoves.size(); i++) {
-        move = pawnMoves.get(i);
+        int[] move;
+        for(int i = 0; i < pawnMoves.size(); i++) {
+            move = pawnMoves.get(i);
         //System.out.println("====================");
         //System.out.println(move[0]);
         //System.out.println(move[1]);
 
-        pawnStates.add(newStateGenerator(originalState, pawnPos, move, piece));
+            pawnStates.add(newStateGenerator(originalState, pawnPos, move, piece));
+
+        }
+        return pawnStates;
+
 
     }
-    return pawnStates;
-
-
-}
 
     // compute all sliding piece states
-public ArrayList<State> computeSlidingStates(State originalState, int[] currPos, char piece, String currColor) {
-    ArrayList<State> newStates = new ArrayList<>();
-    String[] dir = new String[2];
-    int[] newPos = new int[]{currPos[0], currPos[1]};
-    if(Character.toLowerCase(piece) == 'r') {
-        dir[0] = "grid";
-    }else if(Character.toLowerCase(piece) == 'b') {
-        dir[0] = "diagonal";
-    }else if(Character.toLowerCase(piece) == 'q') {
-        dir[0] = "grid";
-        dir[1] = "diagonal";
-    }
+    public ArrayList<State> computeSlidingStates(State originalState, int[] currPos, char piece, String currColor) {
+        ArrayList<State> newStates = new ArrayList<>();
+        String[] dir = new String[2];
+        int[] newPos = new int[]{currPos[0], currPos[1]};
+        if(Character.toLowerCase(piece) == 'r') {
+            dir[0] = "grid";
+        }else if(Character.toLowerCase(piece) == 'b') {
+            dir[0] = "diagonal";
+        }else if(Character.toLowerCase(piece) == 'q') {
+            dir[0] = "grid";
+            dir[1] = "diagonal";
+        }
 
-    for(int i = 0; i < dir.length; i++) {
-        if(dir[i] == null) break;
+        for(int i = 0; i < dir.length; i++) {
+            if(dir[i] == null) break;
         //System.out.println("HERE");
         //System.out.println(dir[0]);
         //System.out.println(piece);
-        computeSlidingStatesHelper(newStates, originalState, currPos, newPos, currColor, dir[i], piece);
+            computeSlidingStatesHelper(newStates, originalState, currPos, newPos, currColor, dir[i], piece);
+
+        }
+        return newStates;   
 
     }
-    return newStates;   
 
-}
-
-public void computeSlidingStatesHelper(ArrayList<State> newStates, State originalState, int[] oldPos, int[] newPos, 
-    String currColor, String dir, char piece)
-{
-    char[][] board = originalState.getBoard();
+    public void computeSlidingStatesHelper(ArrayList<State> newStates, State originalState, int[] oldPos, int[] newPos, 
+        String currColor, String dir, char piece)
+    {
+        char[][] board = originalState.getBoard();
     //System.out.println("Curr position: ("+oldPos[0]+" ,"+oldPos[1]+")");
     //System.out.println("New position: ("+newPos[0]+" ,"+newPos[1]+")");
     //System.out.println(currColor);
     //System.out.println(dir);
     //System.out.println(piece);
 
-    ArrayList<int[]> dirList = unitDirections.get(dir);
-    for(int i = 0; i < dirList.size(); i++) {
-        newPos[0] = oldPos[0];
-        newPos[1] = oldPos[1];
-        while(true){
-            newPos[0] += dirList.get(i)[0];
-            newPos[1] += dirList.get(i)[1];
-            
-            if (inBounds(newPos)) {
-                    // checks if piece from same team is at new pos
-                if((currColor.equals("white") && Character.isLowerCase(board[newPos[0]][newPos[1]])) || (currColor.equals("black") && Character.isUpperCase(board[newPos[0]][newPos[1]])))
-                {
-                    break;
-                    // checks if piece from enemy color is at new pos 
-                }else if((currColor.equals("white") && Character.isUpperCase(board[newPos[0]][newPos[1]])) || currColor.equals("black") && Character.isLowerCase(board[newPos[0]][newPos[1]])) {
-                    newStates.add(newStateGenerator(originalState, oldPos, newPos, piece));
-                    break;
-                }
-                else{
-                    newStates.add(newStateGenerator(originalState, oldPos, newPos, piece));
-                }
-            } else{
-                break;
-            }
-        }
+        ArrayList<int[]> dirList = unitDirections.get(dir);
+        for(int i = 0; i < dirList.size(); i++) {
+            newPos[0] = oldPos[0];
+            newPos[1] = oldPos[1];
+            while(true){
+                newPos[0] += dirList.get(i)[0];
+                newPos[1] += dirList.get(i)[1];
 
+                if (inBounds(newPos)) {
+                    // checks if piece from same team is at new pos
+                    if((currColor.equals("white") && Character.isLowerCase(board[newPos[0]][newPos[1]])) || (currColor.equals("black") && Character.isUpperCase(board[newPos[0]][newPos[1]])))
+                    {
+                        break;
+                    // checks if piece from enemy color is at new pos 
+                    }else if((currColor.equals("white") && Character.isUpperCase(board[newPos[0]][newPos[1]])) || currColor.equals("black") && Character.isLowerCase(board[newPos[0]][newPos[1]])) {
+                        newStates.add(newStateGenerator(originalState, oldPos, newPos, piece));
+                        break;
+                    }
+                    else{
+                        newStates.add(newStateGenerator(originalState, oldPos, newPos, piece));
+                    }
+                } else{
+                    break;
+                }
+            }
+
+        }
     }
-}
 
     // 1. Is King in check? (Do this by imagining King is all of the pieces and seeing if any opponent pieces are the first thing we hit.)
     // 2. First, compute valid moves for King (aka moves in which it's not checked)
@@ -404,81 +377,81 @@ public void computeSlidingStatesHelper(ArrayList<State> newStates, State origina
     // 4. If single checked, add options of eat, block to the original list of moves.
     // 5. For eating and blocking, make sure the piece isn't pinned. (Make sure that the piece we're considering moving is not the only piece
     // between the king and sliding piece.)
-public ArrayList<State> computeKingStates(State originalState, int[] kingPos, String color, ArrayList<int[]> pinList,
-    ArrayList<int[]> checkList) {
-    ArrayList<State> allStates = new ArrayList<>();
+    public ArrayList<State> computeKingStates(State originalState, int[] kingPos, String color, ArrayList<int[]> pinList,
+        ArrayList<int[]> checkList) {
+        ArrayList<State> allStates = new ArrayList<>();
 
-    char[][] board = originalState.getBoard();
+        char[][] board = originalState.getBoard();
 
         // Compute valid king states
         // For each king move, make sure it won't be checked
     //System.out.println("!!!!!!!Computing King States!!!!!");
-    nextKingStateHelper(originalState, allStates, kingPos, color);
+        nextKingStateHelper(originalState, allStates, kingPos, color);
 
     // Is king checked?
         // If so, is it double checked?
-    if (checkList.size() > 1) {
-        return allStates;
-    }
+        if (checkList.size() > 1) {
+            return allStates;
+        }
 
-    if (checkList.isEmpty()) {
-        return allStates;
-    }
+        if (checkList.isEmpty()) {
+            return allStates;
+        }
 
-    int[] checkingPos = checkList.get(0);
+        int[] checkingPos = checkList.get(0);
     //System.out.println("\tChecking King from (" + checkingPos[0] + ", " + checkingPos[1] + ")");
 
     //System.out.println("!!!!!!Tryna Eat!!!!!!!!!");
         // Generate eating states
         // Radiate from the checking enemy piece; for each piece that isn't on the pin list, using that piece to eat results in a valid state
-    eatEnemyCheckHelper(originalState, allStates, checkingPos, pinList, color);
+        eatEnemyCheckHelper(originalState, allStates, checkingPos, pinList, color);
 
         // Is it a knight?
-    if (Character.toLowerCase(board[checkingPos[0]][checkingPos[1]]) == 'n') {
-        return allStates;
-    }
+        if (Character.toLowerCase(board[checkingPos[0]][checkingPos[1]]) == 'n') {
+            return allStates;
+        }
 
     //System.out.println("!!!!!!Tryna Block!!!!!!!!!");
         // Generate blocking states
         // Consider all squares between our king and the checking piece. For each of those squares, call IsControlled()
     //System.out.println("StartPos: (" + kingPos[0] + ", " + kingPos[1] + ")");
     //System.out.println("EndPos: (" + checkingPos[0] + ", " + checkingPos[1] + ")");
-    computeBlockingStates(originalState, allStates, kingPos, checkingPos, pinList, color);
+        computeBlockingStates(originalState, allStates, kingPos, checkingPos, pinList, color);
 
-    return allStates;
-}
+        return allStates;
+    }
 
     // start and end pos here are exclusive
-void computeBlockingStates(State originalState, ArrayList<State> states, int[] startPos, int[] endPos, 
-    ArrayList<int[]> pinList, String color) {
+    void computeBlockingStates(State originalState, ArrayList<State> states, int[] startPos, int[] endPos, 
+        ArrayList<int[]> pinList, String color) {
         // Compute "slope" between start and end; guaranteed to either be vert, horiz, diagonal
-    int dRow = endPos[0] - startPos[0];
-    int dCol = endPos[1] - startPos[1];
+        int dRow = endPos[0] - startPos[0];
+        int dCol = endPos[1] - startPos[1];
 
-    if (dRow != 0) {
-        dRow /= Math.abs(dRow);
-    }
-    if (dCol != 0) {
-        dCol /= Math.abs(dCol);
-    }
+        if (dRow != 0) {
+            dRow /= Math.abs(dRow);
+        }
+        if (dCol != 0) {
+            dCol /= Math.abs(dCol);
+        }
 
-    int[] pos = new int[]{startPos[0] + dRow, startPos[1] + dCol};
+        int[] pos = new int[]{startPos[0] + dRow, startPos[1] + dCol};
 
-    boolean findPins = false;
-    String mode = "blocking";
+        boolean findPins = false;
+        String mode = "blocking";
 
     //System.out.println("Iterating til EndPos: (" + endPos[0] + ", " + endPos[1] + ")");
 
-    char[][] board = originalState.getBoard();
+        char[][] board = originalState.getBoard();
 
-    while (!Arrays.equals(pos, endPos)) {
+        while (!Arrays.equals(pos, endPos)) {
         //System.out.println("Blocking at pos (" + pos[0] + ", " + pos[1] + ")");
-        ArrayList<int[]> blockerOptions = isControlled(board, pos, color.equals("black") ? "white" : "black",
-            findPins, mode).get(0);
-        blockerLoop:
-        for (int[] blocker : blockerOptions) {
-            for (int[] pinner : pinList) {
-                if (Arrays.equals(blocker, pinner)) {
+            ArrayList<int[]> blockerOptions = isControlled(board, pos, color.equals("black") ? "white" : "black",
+                findPins, mode).get(0);
+            blockerLoop:
+            for (int[] blocker : blockerOptions) {
+                for (int[] pinner : pinList) {
+                    if (Arrays.equals(blocker, pinner)) {
                         continue blockerLoop; // Go to next blocker
                     }
                 }
@@ -542,7 +515,7 @@ void computeBlockingStates(State originalState, ArrayList<State> states, int[] s
         // Remember, child states we imagine are of same team/color
         int updatedScore;
         if (originalState.getScore() > 0) {
-            updatedScore = originalState.getScore() - pieceVal.get(Character.toLowerCase(oldBoard[newPos[0]][newPos[1]]));
+            updatedScore = originalState.getScore() + pieceVal.get(Character.toLowerCase(oldBoard[newPos[0]][newPos[1]]));
         } else {
             updatedScore = originalState.getScore() + pieceVal.get(Character.toLowerCase(oldBoard[newPos[0]][newPos[1]]));
         }
@@ -707,69 +680,68 @@ void computeBlockingStates(State originalState, ArrayList<State> states, int[] s
 
                     // If we hit our own piece first it can't be enemy desired piece so we either go further or stop trying this direction
                     if (findPins && ((currColor.equals("white") && Character.isLowerCase(board[pos[0]][pos[1]])) ||
-                       (currColor.equals("black") && Character.isUpperCase(board[pos[0]][pos[1]])))) {
+                     (currColor.equals("black") && Character.isUpperCase(board[pos[0]][pos[1]])))) {
                         pinList.add(new int[]{pos[0], pos[1]});
-                    pinnedOne = true;
-                    //System.out.println("Pinned one!");
-                    findPins = !findPins;
-                    moveCount++;
-                    continue;
-                }
-                else if (!findPins && ((currColor.equals("white") && Character.isLowerCase(board[pos[0]][pos[1]])) ||
-                 (currColor.equals("black") && Character.isUpperCase(board[pos[0]][pos[1]])))) {
-                    if (pinnedOne) {
-                        pinList.remove(pinList.size()-1);
+                        pinnedOne = true;
+                        //System.out.println("Pinned one!");
+                        findPins = !findPins;
+                        moveCount++;
+                        continue;
                     }
-                    break
-                    ;
-                }
+                    else if (!findPins && ((currColor.equals("white") && Character.isLowerCase(board[pos[0]][pos[1]])) ||
+                       (currColor.equals("black") && Character.isUpperCase(board[pos[0]][pos[1]])))) {
+                        if (pinnedOne) {
+                            pinList.remove(pinList.size()-1);
+                        }
+                        break
+                        ;
+                    }
 
                     // See if any of the desired pieces are found
-                for (char piece : possiblePieces) {
-                        // Kings can only move once in a given direction
-                    if (moveCount > 0 && Character.toLowerCase(piece) == 'k') continue;
+                    for (char piece : possiblePieces) {
+                            // Kings can only move once in a given direction
+                        if (moveCount > 0 && Character.toLowerCase(piece) == 'k') continue;
 
                         // Pawns can only move once (or twice if grid) in a given direction
-                    if (moveCount >= pawnMoveMax && Character.toLowerCase(piece) == 'p') continue;
+                        if (moveCount >= pawnMoveMax && Character.toLowerCase(piece) == 'p') continue;
 
                         // White pawn can only move down the board (row increases)
                         // Black pawn can only move up the board (row decreases)
                         // Which means...the direction of exploration has to be row decreases to find a possible
                         // controlling white pawn and vice versa for black
+                        if ((piece == 'p' && dir[0] != -1) || (piece == 'P' && dir[0] != 1)) {
+                            continue;
+                        }
 
-                    if ((piece == 'p' && dir[0] != -1) || (piece == 'P' && dir[0] != 1)) {
-                        continue;
+                            // Stop going in this direction. Btw we now have a pinned piece (if we were searching for that).
+                        if (board[pos[0]][pos[1]] == piece) {
+                            //System.out.println("Found a controlling piece: " + piece);
+                            if (!pinnedOne)
+                                controlledFromPos.add(pos);
+                            break directionLoop;
+                        }
                     }
-
-                        // Stop going in this direction. Btw we now have a pinned piece (if we were searching for that).
-                    if (board[pos[0]][pos[1]] == piece) {
-                        //System.out.println("Found a controlling piece: " + piece);
-                        if (!pinnedOne)
-                            controlledFromPos.add(pos);
-                        break directionLoop;
-                    }
-                }
 
                     // If we hit a piece of opposite color that wasn't a desired piece 
                     // (if it was a desired piece we'd be out of the loop by now)
-                if ((currColor.equals("white") && Character.isUpperCase(board[pos[0]][pos[1]])) ||
-                    (currColor.equals("black") && Character.isLowerCase(board[pos[0]][pos[1]]))) {
-                    if (pinnedOne) {
-                        pinList.remove(pinList.size()-1);
+                    if ((currColor.equals("white") && Character.isUpperCase(board[pos[0]][pos[1]])) ||
+                        (currColor.equals("black") && Character.isLowerCase(board[pos[0]][pos[1]]))) {
+                        if (pinnedOne) {
+                            pinList.remove(pinList.size()-1);
+                        }
+                        break;
                     }
-                    break;
+
+                        // Knight moves once per direction. Don't need to worry about removing from pinlist b/c findPin is false for Knight
+                    if (pieceType.equals("knight")) break;
+
+                    moveCount++;
                 }
-
-                    // Knight moves once per direction. Don't need to worry about removing from pinlist b/c findPin is false for Knight
-                if (pieceType.equals("knight")) break;
-
-                moveCount++;
             }
         }
+        ArrayList<ArrayList<int[]>> controlInfo = new ArrayList<>();
+        controlInfo.add(controlledFromPos);
+        controlInfo.add(pinList);
+        return controlInfo;
     }
-    ArrayList<ArrayList<int[]>> controlInfo = new ArrayList<>();
-    controlInfo.add(controlledFromPos);
-    controlInfo.add(pinList);
-    return controlInfo;
-}
 }

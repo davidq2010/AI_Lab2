@@ -79,5 +79,6 @@ public class ChessAI {
 
         System.out.println("BEST MOOOOOOOOVEEEEEEEEEEEEEEEE");
         printBoard(nextState.getBoard());
+        System.out.println(bm.numStates);
     }
 }
