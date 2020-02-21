@@ -1,3 +1,5 @@
+// Manages our complete chess engine
+// Authors: Nicholas Biffis and David Qin 
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,9 +10,11 @@ import java.util.Collections;
 
 public class BoardStateManager
 {  
+    // Number of vistited states 
     public int numStates = 0;
 
-     // HashMap storing value of pieces
+    // HashMap storing value of pieces; 
+    // Uses standard chess weighting system 
     public static HashMap<Character, Integer> pieceVal = new HashMap<Character, Integer>() {{
         put('q', 9);
         put('r', 5);
@@ -20,12 +24,14 @@ public class BoardStateManager
         put('_', 0);
     }};;
 
+    // Full set of unit directions for all piece types
     public HashMap<String, ArrayList<int[]>> unitDirections;
 
     public BoardStateManager() 
     {
         unitDirections = new HashMap<>();
 
+        // Diagonal unit directions
         ArrayList<int[]> diagonal = new ArrayList<>();
         diagonal.add(new int[]{1, 1});
         diagonal.add(new int[]{-1, -1});
@@ -33,6 +39,7 @@ public class BoardStateManager
         diagonal.add(new int[]{-1, 1});
         unitDirections.put("diagonal", diagonal);
 
+        // Cardinal unit directions (up, down, left, right)
         ArrayList<int[]> grid = new ArrayList<>();
         grid.add(new int[]{1, 0});
         grid.add(new int[]{-1, 0});
@@ -40,6 +47,7 @@ public class BoardStateManager
         grid.add(new int[]{0, -1});
         unitDirections.put("grid", grid);
 
+        // Offsets for knight pieces
         ArrayList<int[]> knight = new ArrayList<>();
         knight.add(new int[]{2, 1});
         knight.add(new int[]{2, -1});
@@ -52,10 +60,12 @@ public class BoardStateManager
         unitDirections.put("knight", knight);
     }
 
+    // Accessor method for unit direction hashmap 
     public HashMap<String, ArrayList<int[]>> getUnitDirections() {
         return unitDirections;
     }
 
+    // Computes the sum of the pieces on the board
     public double computeScore(ArrayList<ArrayList<String>> board) 
     {
         double score = 0;
@@ -71,70 +81,103 @@ public class BoardStateManager
         return score;
     }
 
-    public ImTiredClass negamax(State state, int depth, int alpha, int beta, int color) {
+    // Negamax implementation using a wrapper
+    // Returns an instance of wrapper class that contains optimal state info
+    // Takes a specifed search strategy as param 
+    public NegamaxWrapper negamax(State state, int depth, int alpha, int beta, int color, String strat) {
         String currColor = (color == 1) ? "white" : "black";
 
+        // List of locations of pieces checking king
         ArrayList<int[]> checkList = new ArrayList<>();
 
+        // Successor states (i.e. all possible valid moves from a given state)
         ArrayList<State> successors = computeAllStates(state, currColor, checkList);
 
+        // If the cut-off depth is reached..
         if(depth == 0)
-        {
-            ImTiredClass toReturn = new ImTiredClass(state, state.getScore());
+        {   // Return current state
+            NegamaxWrapper toReturn = new NegamaxWrapper(state, state.getScore());
             return toReturn;
-        }
-        if (successors.isEmpty() && !checkList.isEmpty()) {// Change this
-            ImTiredClass toReturn = new ImTiredClass(state, -10000000);
+        }   // If no successors are generated and something is checking king
+            // The king is checkmated; return state with very "high" score
+        if (successors.isEmpty() && !checkList.isEmpty()) {
+            NegamaxWrapper toReturn = new NegamaxWrapper(state, -10000000);
             return toReturn;
+            // Handles stalemate 
         } else if(successors.isEmpty() && checkList.isEmpty()) {
-            ImTiredClass toReturn = new ImTiredClass(state, 0);
+            NegamaxWrapper toReturn = new NegamaxWrapper(state, 0);
+            return toReturn;
         }
         
-        
-      // GenerateStates accesses computeAllStates
 
         // Visit the successors that are worse for opponent first
-        //Collections.sort(successors);
-        Collections.sort(successors, Collections.reverseOrder());
-        //Collections.shuffle(successors);
+        if(strat.equals("reverse")) {
+            Collections.sort(successors); 
+        // Visit successors best for you first 
+        }else if(strat.equals("sorted")) {
+            Collections.sort(successors, Collections.reverseOrder());
+        // Visit in random order
+        }else if(strat.equals("random")) {
+            Collections.shuffle(successors);
+        }
+
+        // Sets value to -"infinity"
         int value = Integer.MAX_VALUE * -1; 
+        // Index of optimal state
         int idxOfBestState = 0;
-        ImTiredClass weTired;
+        NegamaxWrapper wrappedState;
+        // Iterate through successors
         for (int i = 0; i < successors.size(); i++) {
-            weTired = negamax(successors.get(i), depth-1, -beta, -alpha, -color);
-            int value2 = -weTired.getValue();
+            wrappedState = negamax(successors.get(i), depth-1, -beta, -alpha, -color, strat);
+            // Compares values
+            int value2 = -wrappedState.getValue();
             if (value2 > value) {
                 value = value2;
                 idxOfBestState = i;
             }
+            // Updates alpha 
             alpha = (int) Math.max(alpha, value);
             if(alpha >= beta) {
                 break; //prune
             }
         }
 
-        ImTiredClass toReturn = new ImTiredClass(successors.get(idxOfBestState), value);
+        // Returns the optimal state 
+        NegamaxWrapper toReturn = new NegamaxWrapper(successors.get(idxOfBestState), value);
 
         return toReturn;
     }
 
+    // Wrapper function that calls submethods to compute all successor states 
+    // of varying type pieces
+    // Returns all successor states from a given state 
     public ArrayList<State> computeAllStates(State state, String color, ArrayList<int[]> checkList) {
         this.numStates++;
 
+        // Computes and stores check and pin positions
+        // (check positions are positions of adversary pieces checking king)
+        // (pin positions holds position of piecesing that are pinned)
         ArrayList<ArrayList<int[]>> checkAndPinPositions = computeCheckAndPinPositions(state.getBoard(), 
             color.equals("black") ? state.blackKingPos : state.whiteKingPos, color);
 
+        // Adds check positions to list for later use
         ArrayList<int[]> pinList = checkAndPinPositions.get(1);
         checkList.addAll(checkAndPinPositions.get(0));
 
+        // stores all *VALID* king moves
         ArrayList<State> allState = computeKingStates(state,
             color.equals("black") ? state.blackKingPos : state.whiteKingPos, color, pinList, checkList);
 
         // If checked, return now;
+        // The collection of moves returend by computeKingStates() above,
+        // includes all the possible moves if king is checked.
+        // No need to continue generating.
         if (!checkList.isEmpty()) {
             return allState;
         }
 
+        // Iterate overboard; when piece is found,
+        // generate all moves for that piece 
         for (int i = 0; i < ChessAI.BOARD_SIZE; i++) {
             searchLoop:
             for (int j = 0; j < ChessAI.BOARD_SIZE; j++) {
@@ -150,15 +193,22 @@ public class BoardStateManager
                         }
                     }
 
+                    // Stores all states to be generated
                     ArrayList<State> states = new ArrayList<>();
+                    // Computes pawn moves if selected piece is pawn
+                    // Handles different colors
                     if (Character.toLowerCase(piece) == 'p') {
                         states = computePawnStates(state, piecePos,
                             Character.isLowerCase(piece) ? "white" : "black");
                     }
+
+                    // Compute knight moves if selected piece is friendly night 
                     else if (Character.toLowerCase(piece) == 'n') {
                         states = computeKnightStates(state, piece, piecePos, 
                             Character.isLowerCase(piece) ? "white" : "black");
                     }
+                    // Compute correct sliding piece based of piece retrieved from board
+                    // (Rook, Queen, or Bishop)
                     else if (Character.toLowerCase(piece) == 'b' || Character.toLowerCase(piece) == 'r' ||
                         Character.toLowerCase(piece) == 'q') {
                         states = computeSlidingStates(state, piecePos, piece,
@@ -167,37 +217,48 @@ public class BoardStateManager
                 allState.addAll(states);
             }
         }
-
+        // Return list of valid states 
         return allState;
     }
 
-    // If a piece is eaten during a move, how do we account for it? if we had a board of strings it would be easier!!
-    // in the hashmap of pieces to coords we need support for multiple Pawns, Knights, etc...can't support this w char!
+    // Computes possible night moves (and subsequntly, states)
+    // given a position
+    // Uses the 8 knight offsets from the given grid location 
     public ArrayList<State> computeKnightStates(State originalState, char piece, int[] knightPos, String currColor) {
+        // Temp variables for calculation 
         ArrayList<State> knightStates = new ArrayList<>();
         int[] newKnightPos = new int[]{knightPos[0], knightPos[1]};
         char updatingPiece = piece;
 
+        // board from given state 
         char[][] board = originalState.getBoard();
 
+        // Retrieve knight offsets
         ArrayList<int[]> knightDir = unitDirections.get("knight");
         for(int i = 0; i < knightDir.size(); i++) {
+            // Updates position
             newKnightPos[0] = knightPos[0] + knightDir.get(i)[0];
             newKnightPos[1] = knightPos[1] + knightDir.get(i)[1];
 
+            // Handles situation when friendly piece at possible location (ignores it)
             if (inBounds(newKnightPos)) {
                 if((currColor.equals("white") && Character.isLowerCase(board[newKnightPos[0]][newKnightPos[1]])) || (currColor.equals("black") && Character.isUpperCase(board[newKnightPos[0]][newKnightPos[1]])))
                 {
                     continue;
                 }else{
+                    // Generates new state and adds it to list 
                     knightStates.add(newStateGenerator(originalState, knightPos, newKnightPos, updatingPiece));
                 }
             }
         }
+        // Return list of valid knight states
         return knightStates;
     }
 
+    // Computes possible pawn states
+    // *including* a possible 2-space move if at starting location
     public ArrayList<State> computePawnStates(State originalState, int[] pawnPos, String currColor) {
+        // Temp variables 
         char[][] board = originalState.getBoard();
         ArrayList<State> pawnStates = new ArrayList<>();
         int[] newPawnPos = new int[]{pawnPos[0], pawnPos[1]};
@@ -206,17 +267,16 @@ public class BoardStateManager
 
         if(currColor.equals("white")) {
             piece = 'p';
-            //down
+            // Down; if not obstructed by 
             newPawnPos[0] = pawnPos[0] + 1;
             newPawnPos[1] = pawnPos[1];
             if (inBounds(newPawnPos)) {
                 if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
-                //System.out.println(newPawnPos[0]);
                     pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
 
                 }
             }
-            //down left
+            // Down left; only if opponent is there
             newPawnPos[0] = pawnPos[0] + 1;
             newPawnPos[1] = pawnPos[1] - 1;
             if (inBounds(newPawnPos)) {
@@ -225,7 +285,7 @@ public class BoardStateManager
                     pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
                 }
             }
-            //down right
+            // Down right; only if opponent is there
             newPawnPos[0] = pawnPos[0] + 1;
             newPawnPos[1] = pawnPos[1] + 1;
             if (inBounds(newPawnPos)) {
@@ -234,15 +294,15 @@ public class BoardStateManager
                     pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
                 }
             }
+            // Handles double move if unobstructed and 
+            // pawn is at original position
             if(pawnPos[0] == 1) {
                 newPawnPos[0] = pawnPos[0] + 1;
                 newPawnPos[1] = pawnPos[1];
                 if(board[newPawnPos[0]][newPawnPos[1]] == '_'){
                     newPawnPos[0] += 1;
-
-
                     if(board[newPawnPos[0]][newPawnPos[1]] == '_') {
-                    //System.out.println(newPawnPos[0]);
+                    
                         pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
 
                     }
@@ -250,10 +310,10 @@ public class BoardStateManager
                 }
             }
 
-
+        // Handles black pawns 
         }else {
             piece = 'P';
-            //up
+            // Up; if unobstructed
             newPawnPos[0] = pawnPos[0] - 1;
             newPawnPos[1] = pawnPos[1];
             if (inBounds(newPawnPos)) {
@@ -262,7 +322,7 @@ public class BoardStateManager
 
                 }
             }
-            //up left
+            // Up left; if adversary is at that position
             newPawnPos[0] = pawnPos[0] - 1;
             newPawnPos[1] = pawnPos[1] - 1;
             if (inBounds(newPawnPos)) {
@@ -270,7 +330,7 @@ public class BoardStateManager
                     pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
                 }
             }
-            //up right
+            // Up right; if adversary at that position 
             newPawnPos[0] = pawnPos[0] - 1;
             newPawnPos[1] = pawnPos[1] + 1;
             if (inBounds(newPawnPos)) {
@@ -278,6 +338,7 @@ public class BoardStateManager
                     pawnMoves.add(new int[]{newPawnPos[0], newPawnPos[1]});
                 }
             }
+            // Up two if unobstructed and pawn at original position
             if(pawnPos[0] == 6) {
                 newPawnPos[0] = pawnPos[0] - 1;
                 newPawnPos[1] = pawnPos[1];
@@ -291,26 +352,27 @@ public class BoardStateManager
                 }
             }
         }
+        // Generates states for all valid moves
+        // (computed above)
         int[] move;
         for(int i = 0; i < pawnMoves.size(); i++) {
             move = pawnMoves.get(i);
-        //System.out.println("====================");
-        //System.out.println(move[0]);
-        //System.out.println(move[1]);
-
             pawnStates.add(newStateGenerator(originalState, pawnPos, move, piece));
 
         }
+        // Returns all valid pawn states 
         return pawnStates;
 
 
     }
 
-    // compute all sliding piece states
+    // Computes states for sliding pieces
+    // (Queen, Rook, Bishop)
     public ArrayList<State> computeSlidingStates(State originalState, int[] currPos, char piece, String currColor) {
         ArrayList<State> newStates = new ArrayList<>();
         String[] dir = new String[2];
         int[] newPos = new int[]{currPos[0], currPos[1]};
+        // Generation strategy based on input piece type
         if(Character.toLowerCase(piece) == 'r') {
             dir[0] = "grid";
         }else if(Character.toLowerCase(piece) == 'b') {
@@ -320,14 +382,13 @@ public class BoardStateManager
             dir[1] = "diagonal";
         }
 
+        // Forloop only used if generating states for queen 
         for(int i = 0; i < dir.length; i++) {
             if(dir[i] == null) break;
-        //System.out.println("HERE");
-        //System.out.println(dir[0]);
-        //System.out.println(piece);
             computeSlidingStatesHelper(newStates, originalState, currPos, newPos, currColor, dir[i], piece);
 
         }
+        // Returns all valid sliding piece states
         return newStates;   
 
     }
@@ -336,12 +397,9 @@ public class BoardStateManager
         String currColor, String dir, char piece)
     {
         char[][] board = originalState.getBoard();
-    //System.out.println("Curr position: ("+oldPos[0]+" ,"+oldPos[1]+")");
-    //System.out.println("New position: ("+newPos[0]+" ,"+newPos[1]+")");
-    //System.out.println(currColor);
-    //System.out.println(dir);
-    //System.out.println(piece);
 
+        // Retrieves appropriate unit directions based on piece type
+        // (correct directions passed in)
         ArrayList<int[]> dirList = unitDirections.get(dir);
         for(int i = 0; i < dirList.size(); i++) {
             newPos[0] = oldPos[0];
@@ -351,11 +409,13 @@ public class BoardStateManager
                 newPos[1] += dirList.get(i)[1];
 
                 if (inBounds(newPos)) {
-                    // checks if piece from same team is at new pos
+                    // Checks if piece from same team is at new position;
+                    // Stops short
                     if((currColor.equals("white") && Character.isLowerCase(board[newPos[0]][newPos[1]])) || (currColor.equals("black") && Character.isUpperCase(board[newPos[0]][newPos[1]])))
                     {
                         break;
-                    // checks if piece from enemy color is at new pos 
+                    // Checks if piece from enemy color is at new position;
+                    // stops after eating piece
                     }else if((currColor.equals("white") && Character.isUpperCase(board[newPos[0]][newPos[1]])) || currColor.equals("black") && Character.isLowerCase(board[newPos[0]][newPos[1]])) {
                         newStates.add(newStateGenerator(originalState, oldPos, newPos, piece));
                         break;
@@ -385,10 +445,9 @@ public class BoardStateManager
 
         // Compute valid king states
         // For each king move, make sure it won't be checked
-    //System.out.println("!!!!!!!Computing King States!!!!!");
         nextKingStateHelper(originalState, allStates, kingPos, color);
 
-    // Is king checked?
+        // Is king checked?
         // If so, is it double checked?
         if (checkList.size() > 1) {
             return allStates;
@@ -399,9 +458,7 @@ public class BoardStateManager
         }
 
         int[] checkingPos = checkList.get(0);
-    //System.out.println("\tChecking King from (" + checkingPos[0] + ", " + checkingPos[1] + ")");
-
-    //System.out.println("!!!!!!Tryna Eat!!!!!!!!!");
+ 
         // Generate eating states
         // Radiate from the checking enemy piece; for each piece that isn't on the pin list, using that piece to eat results in a valid state
         eatEnemyCheckHelper(originalState, allStates, checkingPos, pinList, color);
@@ -411,17 +468,15 @@ public class BoardStateManager
             return allStates;
         }
 
-    //System.out.println("!!!!!!Tryna Block!!!!!!!!!");
         // Generate blocking states
         // Consider all squares between our king and the checking piece. For each of those squares, call IsControlled()
-    //System.out.println("StartPos: (" + kingPos[0] + ", " + kingPos[1] + ")");
-    //System.out.println("EndPos: (" + checkingPos[0] + ", " + checkingPos[1] + ")");
+        // This checks if a friendly piece can block a check on friendly king
         computeBlockingStates(originalState, allStates, kingPos, checkingPos, pinList, color);
 
         return allStates;
     }
 
-    // start and end pos here are exclusive
+    // Generated all possible states that result in blocking
     void computeBlockingStates(State originalState, ArrayList<State> states, int[] startPos, int[] endPos, 
         ArrayList<int[]> pinList, String color) {
         // Compute "slope" between start and end; guaranteed to either be vert, horiz, diagonal
@@ -440,12 +495,11 @@ public class BoardStateManager
         boolean findPins = false;
         String mode = "blocking";
 
-    //System.out.println("Iterating til EndPos: (" + endPos[0] + ", " + endPos[1] + ")");
-
         char[][] board = originalState.getBoard();
 
+        // Checks if any empty grid b/t king and checking piece is controlled
+        // by friendly piece
         while (!Arrays.equals(pos, endPos)) {
-        //System.out.println("Blocking at pos (" + pos[0] + ", " + pos[1] + ")");
             ArrayList<int[]> blockerOptions = isControlled(board, pos, color.equals("black") ? "white" : "black",
                 findPins, mode).get(0);
             blockerLoop:
@@ -464,15 +518,20 @@ public class BoardStateManager
         }
     }
 
+    // Computes states where piece checking king can be eaten 
     void eatEnemyCheckHelper(State originalState, ArrayList<State> states, int[] pos, ArrayList<int[]> pinList, String color) {
         String mode = "eating";
         boolean findPins = false;
         char[][] board = originalState.getBoard();
+
+        // Gets all pieces that control the grid of piece checking king
         ArrayList<int[]> eaterOptions = isControlled(board, pos, color.equals("black") ? "white" : "black", 
             findPins, mode).get(0);
         eaterLoop:
+
+        // Goes through each possible eater piece and makes sure 
+        // it isn't pinned; adds to list of valid states if not
         for (int[] eater : eaterOptions) {
-            // TODO: pinList could be a HashSet
             for (int[] pinner : pinList) {
                 if (Arrays.equals(eater, pinner)) {
                     continue eaterLoop; // Go to next eater
@@ -483,6 +542,7 @@ public class BoardStateManager
         }
     }
 
+    // Computes the check and pin positions for the grid of the king
     public ArrayList<ArrayList<int[]>> computeCheckAndPinPositions(char[][] board, int[] kingPos, String color) {
         boolean findPins = true;
         String mode = "eating";
@@ -490,12 +550,16 @@ public class BoardStateManager
         return controlInfo;
     }
 
+    // Generates new state given old position and new position of given piece
     public State newStateGenerator(State originalState, int[] oldPos, int[] newPos, char piece) {
-        //System.out.println("PEAAACCEEEEE " + piece);
+        // Initializes new state 
         char[][] newState = new char[ChessAI.BOARD_SIZE][ChessAI.BOARD_SIZE];
         char[][] oldBoard = originalState.getBoard();
+        // Temp structures to hold king positions 
         int[] blackKingPos = new int[2];
         int[] whiteKingPos = new int[2];
+
+        // Iterate, and generate new board with piece at updated location
         for (int i = 0; i < ChessAI.BOARD_SIZE; i++) {
             for (int j = 0; j < ChessAI.BOARD_SIZE; j++) {
                 newState[i][j] = oldBoard[i][j]; 
@@ -509,22 +573,21 @@ public class BoardStateManager
                 }
             }
         }
+         // Ensure old location is empty
         newState[newPos[0]][newPos[1]] = piece;
         newState[oldPos[0]][oldPos[1]] = '_';
 
         // Remember, child states we imagine are of same team/color
         int updatedScore;
-        if (originalState.getScore() > 0) {
-            updatedScore = originalState.getScore() + pieceVal.get(Character.toLowerCase(oldBoard[newPos[0]][newPos[1]]));
-        } else {
-            updatedScore = originalState.getScore() + pieceVal.get(Character.toLowerCase(oldBoard[newPos[0]][newPos[1]]));
-        }
+        // Generate score of board
+        updatedScore = originalState.getScore() + pieceVal.get(Character.toLowerCase(oldBoard[newPos[0]][newPos[1]]));
         String color = Character.isLowerCase(piece) ? "white" : "black";
         State actualState = new State(newState, updatedScore, color, blackKingPos, whiteKingPos);
-
+        // Return generated state
         return actualState;
     }
 
+    // Helper fior generating states resulting from moving king
     public void nextKingStateHelper(State originalState, ArrayList<State> states, int[] kingPos, String color) {
         char[][] board = originalState.getBoard();
         // Check all grid directions and diagonal directions
@@ -534,15 +597,18 @@ public class BoardStateManager
         for (int[] dir : dirs) {
             int[] pos = new int[]{kingPos[0] + dir[0], kingPos[1] + dir[1]};
             if (inBounds(pos) && noSameTeamPiece(board, pos, color)) {
+                // Checks if specific adjacent grid is controlled by adversary
                 ArrayList<int[]> controlPos = isControlled(board, pos, color, false, "kingMove").get(0);
+                // If its not controlled, add a new state resulting from that potential move
                 if (controlPos.isEmpty()) {
                     states.add(newStateGenerator(originalState, kingPos, pos, color.equals("black") ? 'K' : 'k'));
-                    //System.out.println("Free Pos For King at (" + pos[0] + ", " + pos[1] + ")");
+                
                 }
             }
         }
     }
 
+    // Helper method to ensure piece at specified location is not on same team
     public boolean noSameTeamPiece(char[][] board, int[] pos, String color) {
         if (color.equals("black") && Character.isUpperCase(board[pos[0]][pos[1]])) {
             return false;   
@@ -553,6 +619,7 @@ public class BoardStateManager
         return true;
     }
 
+    // Checks if specified position is in bound 
     public boolean inBounds(int[] pos) {
         if (pos[0] < 0 || pos[0] >= ChessAI.BOARD_SIZE || pos[1] < 0 || pos[1] >= ChessAI.BOARD_SIZE)
             return false;
@@ -637,13 +704,9 @@ public class BoardStateManager
                 }
             }
 
-            ////System.out.println("PawnMoveMax: " + pawnMoveMax);
-
             // Directions that correspond to the current PieceType
             for (int[] dir : directions) 
             {
-                //System.out.println("Considering direction " + "(" + dir[0] + ", " + dir[1] + ") from (" + currPos[0] + ", " + currPos[1] + ")");
-
                 // This can be done using a ternary
                 boolean findPins = goFurther;
                 if (pieceType.equals("knight")) // Knights can't result in pin

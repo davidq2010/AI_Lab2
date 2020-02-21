@@ -1,8 +1,8 @@
-public class ImTiredClass {
+public class NegamaxWrapper {
 	private State state;
 	private int value;
 
-	public ImTiredClass(State state, int value) {
+	public NegamaxWrapper(State state, int value) {
 		this.state = state;
 		this.value = value;
 	}

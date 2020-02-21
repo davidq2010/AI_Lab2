@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import java.io.IOException;
 
-public class TestTheWholeGoshDarnDuMa {
+public class TestComplete{
 	
 	private static int[] findPiece(char[][] board, char piece) {
 		int[] pos = new int[2];

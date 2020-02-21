@@ -1,6 +1,7 @@
 import java.lang.Character;
 import java.lang.Comparable;
 
+// Implementation of State class
 public class State implements Comparable<State> {
 	private char[][] board;
 	private int score;
@@ -8,6 +9,7 @@ public class State implements Comparable<State> {
 	public int[] blackKingPos;
 	public int[] whiteKingPos;
 
+	// State constructor
 	public State(char[][] board, int score, String colorOfStateMover,
 		int[] blackKingPos, int[] whiteKingPos) {
 		this.board = board;
@@ -17,18 +19,22 @@ public class State implements Comparable<State> {
 		this.whiteKingPos = whiteKingPos;
 	}
 
+	// Compares scores of two states
 	public int compareTo(State other) {
 		return this.score - other.score;
 	}
 
+	// Sets board instance
 	public void setBoard(char[][] board) {
 		this.board = board;
 	}
 
+	// Sets score instance
 	public void setScore(int score) {
 		this.score = score;
 	}
 
+	// Gets the king position in current state 
 	public int[] getBlackKingPos() { return blackKingPos; }
 	public int[] getWhiteKingPos() { return whiteKingPos; }
 
@@ -44,6 +50,7 @@ public class State implements Comparable<State> {
 		return color;
 	}
 
+	// Computes board score using pieces on board and standard piece values
 	public void computeScore() {
 		for (int i = 0; i < ChessAI.BOARD_SIZE; i++) {
 			for (int j = 0; j < ChessAI.BOARD_SIZE; j++) {

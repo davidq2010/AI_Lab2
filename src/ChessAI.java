@@ -6,6 +6,7 @@ public class ChessAI {
 
     public static final int BOARD_SIZE = 8;
 
+    // Generates an ASCII board
     public static char[][] GetBoard(String fileName)
         throws IOException {
         // Try with resource
@@ -27,6 +28,7 @@ public class ChessAI {
         }
     }
 
+    // Prints board
     public static void printBoard(char[][] board) {
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
@@ -36,6 +38,7 @@ public class ChessAI {
         }
     }
 
+    // Finds Specified piece on board
     public static int[] findPiece(char[][] board, char piece) {
         int[] pos = new int[2];
         for (int i = 0; i < ChessAI.BOARD_SIZE; i++) {
@@ -49,36 +52,55 @@ public class ChessAI {
         return pos;
     }
 
+    // Main 
     public static void main(String[] args) throws IOException {
-        if (args.length != 1) {
-            System.out.println("Usage: java Chess <inputFile>");
+        System.out.println();
+        if (args.length != 4) {
+            System.out.println("Usage: java Chess <inputFile> <color> <strategy> <max_depth>");
             System.exit(0);
         }
+        // Handles input args 
         String filename = args[0];
+        String color = args[1];
+        String strategy = args[2];
+        int maxDepth = Integer.parseInt(args[3]);
+        
+        // Initializes board
         char[][] board = ChessAI.GetBoard(filename);
+        System.out.println("Initial state:\n===============");
+        // Prints initial board
         ChessAI.printBoard(board);
+        System.out.println("===============");
+        System.out.println();
 
+        // Stores positions of kings
         int[] whiteKingPos = findPiece(board, 'k'); 
         int[] blackKingPos = findPiece(board, 'K');
 
-        System.out.println("BlackKingPos: " + blackKingPos[0] + ", " + blackKingPos[1]);
-
-        String color = "black";
-
+        
+        // Creates instance of chess engine
         BoardStateManager bm = new BoardStateManager();
+        // Generates initial state given board, positions of kings;
+        // Sets score to 0
         State startState = new State(board, 0, color, blackKingPos, whiteKingPos);
         startState.computeScore();
-        int maxDepth = 4;
+        //int maxDepth = 4;
         int alpha = Integer.MAX_VALUE*-1;
         int beta = Integer.MAX_VALUE;
-        int color1 = -1;
-
-
-        ImTiredClass bestMove = bm.negamax(startState, maxDepth, alpha, beta, color1);
+        // color variable for negamax 
+        int negaColor;
+        if(color.equals("black")) {
+            negaColor = -1;
+        }else{
+            negaColor = 1;
+        }   
+        
+        // Run negamax w/ alpha-beta pruning on initial state
+        NegamaxWrapper bestMove = bm.negamax(startState, maxDepth, alpha, beta, negaColor, strategy);
         State nextState = bestMove.getState();
-
-        System.out.println("BEST MOOOOOOOOVEEEEEEEEEEEEEEEE");
+        System.out.println("State after optimal move:\n===============");
         printBoard(nextState.getBoard());
-        System.out.println(bm.numStates);
+        System.out.println("===============");
+        System.out.println("Nodes visited:" + bm.numStates);
     }
 }
