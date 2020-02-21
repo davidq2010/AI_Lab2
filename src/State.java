@@ -3,15 +3,18 @@ import java.lang.Comparable;
 
 public class State implements Comparable<State> {
 	private char[][] board;
-	int score;
-	boolean kingChecked;
-	String color;
+	private int score;
+	private String color;
+	public int[] blackKingPos;
+	public int[] whiteKingPos;
 
-	public State(char[][] board, int score, boolean kingChecked, String colorOfStateMover) {
+	public State(char[][] board, int score, String colorOfStateMover,
+		int[] blackKingPos, int[] whiteKingPos) {
 		this.board = board;
 		this.score = score;
-		this.kingChecked = kingChecked;
 		this.color = colorOfStateMover;
+		this.blackKingPos = blackKingPos;
+		this.whiteKingPos = whiteKingPos;
 	}
 
 	public int compareTo(State other) {
@@ -26,9 +29,8 @@ public class State implements Comparable<State> {
 		this.score = score;
 	}
 
-	public void setKingChecked(boolean kingChecked) {
-		this.kingChecked = kingChecked;
-	}
+	public int[] getBlackKingPos() { return blackKingPos; }
+	public int[] getWhiteKingPos() { return whiteKingPos; }
 
 	public char[][] getBoard() {
 		return board;
@@ -38,21 +40,23 @@ public class State implements Comparable<State> {
 		return score;
 	}
 
-	public boolean getKingChecked() {
-		return kingChecked;
-	}
-
 	public String getColorOfStateMover() {
 		return color;
 	}
 
-	public int computeScore() {
+	public void computeScore() {
 		for (int i = 0; i < ChessAI.BOARD_SIZE; i++) {
 			for (int j = 0; j < ChessAI.BOARD_SIZE; j++) {
+				if (Character.toLowerCase(board[i][j]) == 'k') {
+					continue;
+				}
 				if (color.equals("white") && Character.isLowerCase(board[i][j])) {
 					score += BoardStateManager.pieceVal.get(board[i][j]);
 				} else if (color.equals("black") && Character.isUpperCase(board[i][j])) {
 					score += BoardStateManager.pieceVal.get(Character.toLowerCase(board[i][j]));
+				}
+				else {
+					score -= BoardStateManager.pieceVal.get(Character.toLowerCase(board[i][j]));
 				}
 			}
 		}
