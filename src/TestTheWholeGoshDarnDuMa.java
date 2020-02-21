@@ -20,6 +20,7 @@ public class TestTheWholeGoshDarnDuMa {
 		ArrayList<State> allStates = bm.computeAllStates(startState, color);
 
 		for (State state : allStates) {
+			System.out.println("SCORE: " + state.getScore());
 			ChessAI.printBoard(state.getBoard());
 			System.out.println();
 		}
@@ -44,6 +45,7 @@ public class TestTheWholeGoshDarnDuMa {
 		BoardStateManager bm = new BoardStateManager();
 		State startState = new State(board, 0, color, blackKingPos, whiteKingPos);
 		startState.computeScore();
+		System.out.println("Initial Score: " + startState.getScore());
 
 		testEverything(bm, startState, color);
 	}

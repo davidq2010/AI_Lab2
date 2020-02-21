@@ -10,6 +10,7 @@ public static double negamax(ArrayList<char[][]> state, int depth, double alpha,
   }
   // TODO write a method to encapsulate all state generation
   ArrayList<char[][]> successors = state.generateStates();
+  // GenerateStates accesses computeAllStates
 
   // TODO write method to reorder states based on some policy
   ArrayList<char[][]> orderedSuccessors = reorderStates(successors);
