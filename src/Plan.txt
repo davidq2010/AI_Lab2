@@ -1,0 +1,11 @@
+Plan:
+
+- Piece parent class. Each piece has method called computeMoves
+- BoardStateManager is for setting up board, checking for location of pieces (when determining validity),
+	checking for mate, maybe also checks, value of board
+- Negamax class
+
+- At first glance, each piece has unit directions and can either move once in that direction or multiple times.
+	The exceptions seem to be castling, pawns (2 move from starting row)
+
+- BM will have to initialize all Piece Move Generators
