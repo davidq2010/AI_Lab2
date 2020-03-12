@@ -32,6 +32,8 @@ public abstract class PieceMoveGenerator {
 				newPos[1] += dir[1];
 
 				if (!m_bm.inBounds(newPos)) break;
+
+				// Check for any sort of collision	
 				Color newPosPieceColor = m_bm.posPieceColor(_state, newPos);
 				// Teammate collision
 				if (newPosPieceColor == m_color) break;
@@ -41,6 +43,7 @@ public abstract class PieceMoveGenerator {
 					if (newPosPieceColor != null) break;
 				}
 
+				// Non-sliding pieces move once in unit direction
 				if (!m_isSliding) break;
 			}
 		}
