@@ -3,7 +3,7 @@ import java.util.ArrayList;
 
 public class KingMoveGenerator extends PieceMoveGenerator {
 
-	public KingMoveGenerator(BoardStateManager _bm, Color _color) {
+	public KingMoveGenerator(BoardStateManager _bm) {
 		List<int[]> dirs = new ArrayList<>() {{
 			add(new int[]{1, 1});
 			add(new int[]{-1, -1});
@@ -14,7 +14,7 @@ public class KingMoveGenerator extends PieceMoveGenerator {
 			add(new int[]{-1, 1});
 			add(new int[]{1, -1});
 		}}
-		super(dirs, false, _bm, _color);
+		super(dirs, false, _bm);
 	}
 
 	private State genCastleState(State _state, CastleDir _dir) {
@@ -24,8 +24,7 @@ public class KingMoveGenerator extends PieceMoveGenerator {
 			return m_bm.genNewState(_state, currPlayerKingPos,
 				currPlayerKingRookPos, true);
 		} 
-		// Queenside castle; no option for null CastleDir
-		else {
+		else {  // Queenside castle
 			int[] currPlayerQueenRookPos = m_bm.getInitRookPos(_state.getCurrentPlayer(), CastleDir.QUEEN);
 			return m_bm.genNewState(_state, currPlayerKingPos,
 				currPlayerQueenRookPos, true);
@@ -33,9 +32,9 @@ public class KingMoveGenerator extends PieceMoveGenerator {
 	}
 
 	@Override
-	boolean canAddNewPos(int[] _pos) {
-		// TODO: Return whether/not _pos is in check
-		return true;
+	boolean canAddNewPos(State _state, int[] _pos) {
+		return !_state.isControlled(_pos, m_bm.oppositeColor(_state.getCurrentPlayer()),
+			ControlMode.CAPTURE, false);
 	}
 
 	List<State> individualComputation(State _state, int[] _pos) {

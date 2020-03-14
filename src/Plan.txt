@@ -11,16 +11,21 @@ Plan:
 - BM will have to initialize all Piece Move Generators
 
 State
-- colorAt(pos)
+- colorAt(pos) (Black, white, null)
 - canCastleRight()
 - canCastleLeft()
 - getCurrentPlayer() returns Color
+- posIsEmpty(Pos)
+- isControlled(Pos, Color, Mode, Pins/Not)
+- setEnPassant(Pos): Only used for setting en passant for a specific state where used 2-step open. All new states generated from this state will have the enPassant variable initialized to null
+- getEnPassant(Pos)
 
 BM
-- genNewState() has a param _switch that says whether/not to switch the chars at the 2 positions
+- genNewState() has a param _switch that says whether/not to switch the chars at the 2 positions.
 - inBounds()
 - getInitKingPos(Color)
 - getInitRookPos(Color, CastleDir)
+- oppositeColor(Color)
 
 Have a Map of positions to chars.
 Get Check and Pin positions from State.
@@ -32,12 +37,14 @@ Blocking requires knowing whether *empty* squares between checked king and check
 
 isControlled() will try every piece to see if the movesGenerated will include the piece.
 isControlled() needs different modes. The mode will determine the pieces to try and the moves to try.
-For blocking, we will skip the king and only try commonComp moves (relevant only to pawn, which can move forward 1 or 2 to block).
-For eating, we can try all non-castle moves for king and all individualMoves for pawn, but no pawn commonMoves.
+For blocking, we will skip the king and only try commonComp moves 
+For eating, we can try all non-castle moves for king and all attacking individualMoves for pawn, but no pawn commonMoves or 2 move start.
 
-B/c of this design, PawnMoveGenerator's unitDirs will be one forward or 2 forward (so commonComp will try both for things like blocking). Capture (including en passant) will be individualComputation.
+B/c of this design, PawnMoveGenerator's unitDirs will be one forward. Blocking will necessitate trying common move and 2 move start. Capture (including en passant) will be individualComputation.
 
 So if not checked:
 for each pos in Map:
 	if pos not in pinned:
 		Generate moves for the appropriate piece using switch case
+
+White pawn move generator and black pawn move generator

@@ -6,15 +6,13 @@ public abstract class PieceMoveGenerator {
 	private List<int[]> m_unitDirs;
 	private boolean m_isSliding;
 	private BoardStateManager m_bm;
-	private Color m_color;
 	private boolean m_canDoIndividualComputation = true;
 
 	public PieceMoveGenerator(List<int[]> _dirs, boolean _isSliding, 
-		BoardStateManager _bm, Color _color) {
+		BoardStateManager _bm) {
 		m_unitDirs = _dirs;
 		m_isSliding = _isSliding;
 		m_bm = _bm;
-		m_color = _color;
 	}
 
 	// Template method design
@@ -28,7 +26,7 @@ public abstract class PieceMoveGenerator {
 		return result;
 	}
 
-	private final void commonComputation(State _state, int[] _pos, 
+	protected final void commonComputation(State _state, int[] _pos, 
 		List<State> o_newStates) {
 		for (int[] dir : m_unitDirs) {
 			int[] newPos = new int[]{pos[0], pos[1]};
@@ -41,9 +39,9 @@ public abstract class PieceMoveGenerator {
 				// Check for any sort of collision	
 				Color newPosPieceColor = _state.colorAt(newPos);
 				// Teammate collision
-				if (newPosPieceColor == m_color) break;
+				if (newPosPieceColor == _state.getCurrentPlayer()) break;
 				else {
-					if (canAddNewPos(newPos)) {
+					if (canAddNewPos(_state, newPos)) {
 						o_newStates.add(m_bm.genNewState(_state, _pos, newPos, false));
 					}
 					// Opposing piece collision
@@ -61,7 +59,7 @@ public abstract class PieceMoveGenerator {
 	}
 
 	// Package scope only
-	abstract boolean canAddNewPos(int[] _pos);
+	abstract boolean canAddNewPos(State _state, int[] _pos);
 
 	abstract List<State> individualComputation(State _state, int[] _pos);
 }
