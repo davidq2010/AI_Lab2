@@ -18,14 +18,13 @@ State
 - posIsEmpty(Pos)
 - isControlled(Pos, Color, Mode, Pins/Not)
 - setEnPassant(Pos): Only used for setting en passant for a specific state where used 2-step open. All new states generated from this state will have the enPassant variable initialized to null
-- getEnPassant(Pos)
+- getEnPassant() returns a Pos (could be null)
 
 BM
-- genNewState() has a param _switch that says whether/not to switch the chars at the 2 positions.
+- genNewState() 
 - inBounds()
-- getInitKingPos(Color)
-- getInitRookPos(Color, CastleDir)
 - oppositeColor(Color)
+- Color getUserColor()
 
 Have a Map of positions to chars.
 Get Check and Pin positions from State.

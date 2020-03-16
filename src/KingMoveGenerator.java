@@ -18,31 +18,34 @@ public class KingMoveGenerator extends PieceMoveGenerator {
 	}
 
 	private State genCastleState(State _state, CastleDir _dir) {
-		int[] currPlayerKingPos = m_bm.getInitKingPos(_state.getCurrentPlayer());
+		int[] currPlayerKingPos = _state.getKingPos(_state.getCurrentPlayer());
+		int row = currPlayerKingPos[0];
+		int[] newKingPos, newRookPos;
 		if (_dir.equals(CastleDir.KING)) {
-			int[] currPlayerKingRookPos = m_bm.getInitRookPos(_state.getCurrentPlayer(), CastleDir.KING);
-			return m_bm.genNewState(_state, currPlayerKingPos,
-				currPlayerKingRookPos, true);
+			newKingPos = new int[]{row, currPlayerKingPos[1]+2}; 
+			newRookPos = new int[]{row, currPlayerRookPos[1]-2};
 		} 
 		else {  // Queenside castle
-			int[] currPlayerQueenRookPos = m_bm.getInitRookPos(_state.getCurrentPlayer(), CastleDir.QUEEN);
-			return m_bm.genNewState(_state, currPlayerKingPos,
-				currPlayerQueenRookPos, true);
+			newKingPos = new int[]{row, currPlayerKingPos[1]-2}; 
+			newRookPos = new int[]{row, currPlayerRookPos[1]+3};
 		}
+		return m_bm.genNewState(_state, currPlayerKingPos, newKingPos, 
+			currPlayerRookPos, newRookPos);
 	}
 
 	@Override
 	boolean canAddNewPos(State _state, int[] _pos) {
-		return !_state.isControlled(_pos, m_bm.oppositeColor(_state.getCurrentPlayer()),
-			ControlMode.CAPTURE, false);
+		List<int[]> controllers = _state.getOpponentControllers(_pos, _state.getCurrentPlayer(), 
+			ControlMode.CAPTURE);
+		return controllers.isEmpty();
 	}
 
 	List<State> individualComputation(State _state, int[] _pos) {
 		List<State> newStates = new ArrayList<>();
-		if (m_bm.canCastle(_state, CastleDir.KING)) {
+		if (_state.canCastle(CastleDir.KING)) {
 			newStates.add(genCastleState(_state, CastleDir.KING));
 		}
-		if (m_bm.canCastle(_state, CastleDir.QUEEN)) {
+		if (_state.canCastle(CastleDir.QUEEN)) {
 			newStates.add(genCastleState(_state, CastleDir.QUEEN));
 		}
 		return newStates;
